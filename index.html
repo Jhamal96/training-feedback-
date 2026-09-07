@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Training Mission Grading Form</title>
+
 <style>
   :root{
     --bg:#12151a;
@@ -16,10 +17,17 @@
     --cyan-dim:#2c5a54;
     --amber:#f2a93b;
     --red:#e0645a;
+    --purple:#9f7aea;
+    --purple-dim:#3b2a59;
     --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   }
   *{box-sizing:border-box;}
+  html, body {
+    width: 100%;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
   body{
     margin:0;
     background:var(--bg);
@@ -27,7 +35,13 @@
     font-family:var(--sans);
     -webkit-font-smoothing:antialiased;
   }
-  .wrap{ max-width:880px; margin:0 auto; padding:0 18px 60px; }
+  
+  button, select, input, textarea {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .wrap{ max-width:880px; margin:0 auto; padding:0 18px 100px; }
 
   /* Landing Screen */
   .landing-card {
@@ -36,24 +50,27 @@
     border-radius: 12px;
     padding: 32px 24px;
     max-width: 500px;
-    margin: 80px auto 0;
+    margin: 20px auto 0;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   }
 
-  /* ---- HUD header ---- */
+  /* ---- HUD Header (Sticky & Floating Access Container) ---- */
   .hud{
-    position:sticky; top:0; z-index:20;
-    background:linear-gradient(180deg, var(--bg) 80%, transparent);
-    padding:16px 0 10px;
+    position:sticky; top:0; z-index:40;
+    background:linear-gradient(180deg, var(--bg) 85%, transparent);
+    padding:12px 0 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
   }
   .hud-inner{
     background:var(--panel);
     border:1px solid var(--line);
     border-radius:10px;
-    padding:14px 18px;
+    padding:12px 16px;
     display:flex;
     align-items:center;
-    gap:18px;
+    gap:12px;
+    flex-wrap: wrap;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
   }
   .hud-home-btn{
     border:1px solid var(--line);
@@ -62,7 +79,7 @@
     font-family:var(--sans);
     font-size:13px;
     font-weight:600;
-    padding:8px 14px;
+    padding:8px 12px;
     border-radius:7px;
     cursor:pointer;
     display:flex;
@@ -70,20 +87,23 @@
     gap:6px;
     transition:border-color .15s, background .15s, color .15s;
     white-space:nowrap;
+    min-height:38px;
   }
   .hud-home-btn:hover{ border-color:var(--cyan); color:var(--cyan); }
   
   .hud-title{
     font-family:var(--mono);
     font-size:11px;
-    letter-spacing:.14em;
+    letter-spacing:.12em;
     text-transform:uppercase;
     color:var(--muted);
+    flex: 1 1 auto;
+    min-width: 160px;
   }
   .hud-title strong{
     display:block;
     font-family:var(--sans);
-    font-size:17px;
+    font-size:15px;
     letter-spacing:0;
     text-transform:none;
     color:var(--text);
@@ -97,16 +117,18 @@
     white-space:nowrap;
   }
   .hud-score .num{
-    font-size:34px;
+    font-size:30px;
     font-weight:700;
     color:var(--cyan);
     line-height:1;
   }
-  .hud-score .max{ color:var(--muted); font-size:16px; }
+  .hud-score .max{ color:var(--muted); font-size:15px; }
   .hud-score .label{ font-size:10px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; }
   .gauge{
     height:6px; border-radius:4px; background:var(--panel-2);
-    margin-top:10px; overflow:hidden; border:1px solid var(--line);
+    margin-top:6px; overflow:hidden; border:1px solid var(--line);
+    width: 100%;
+    min-width: 80px;
   }
   .gauge-fill{
     height:100%; width:0%;
@@ -114,52 +136,98 @@
     transition:width .25s ease;
   }
 
-  /* ---- stopwatch ---- */
-  .stopwatch{
-    display:flex; align-items:center; justify-content:space-between;
-    gap:16px; flex-wrap:wrap;
+  .autosave-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--cyan);
+    background: var(--cyan-dim);
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: .05em;
+    display: inline-block;
+    margin-top: 4px;
+    opacity: 0;
+    transition: opacity .3s ease;
   }
-  .sw-time{
-    font-family:var(--mono);
-    font-size:40px;
-    font-weight:700;
-    color:var(--cyan);
-    letter-spacing:.02em;
-    font-variant-numeric:tabular-nums;
+  .autosave-badge.show { opacity: 1; }
+
+  /* ---- Quick Navigation Bar (Sticky beneath HUD) ---- */
+  .quick-nav-container {
+    position: sticky;
+    top: 76px;
+    z-index: 30;
+    background: linear-gradient(180deg, var(--bg) 70%, transparent);
+    padding-bottom: 6px;
   }
-  .sw-controls{ display:flex; gap:8px; }
-  .sw-btn{
-    border:1px solid var(--line);
-    background:var(--panel-2);
-    color:var(--text);
-    font-family:var(--sans);
-    font-size:13px;
-    font-weight:600;
-    padding:10px 18px;
-    border-radius:7px;
-    cursor:pointer;
-    transition:border-color .15s, background .15s, color .15s;
+  .quick-nav-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 8px 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
   }
-  .sw-btn:hover{ border-color:var(--cyan); }
-  .sw-btn.start{ background:var(--cyan); border-color:var(--cyan); color:#0b1210; }
-  .sw-btn.stop{ background:var(--red); border-color:var(--red); color:#0b1210; }
-  .sw-btn.clear:hover{ border-color:var(--red); color:var(--red); }
-  .sw-saved{
-    margin-top:14px; padding-top:14px; border-top:1px solid var(--line);
-    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  .quick-nav-btn {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .15s ease;
+    flex-shrink: 0;
   }
-  .sw-saved label{ margin:0; }
-  .sw-saved-time{
-    font-family:var(--mono); font-size:22px; font-weight:700; color:var(--amber);
+  .quick-nav-btn:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: var(--panel);
   }
 
-  /* ---- session info ---- */
+  /* ---- Floating Scroll Buttons ---- */
+  .scroll-nav {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .scroll-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    transition: background .15s, border-color .15s, transform .15s, color .15s;
+  }
+  .scroll-btn:hover {
+    background: var(--panel-2);
+    border-color: var(--cyan);
+    color: #ffffff;
+    transform: translateY(-2px);
+  }
+
+  /* ---- Cards & Grids ---- */
   .card{
     background:var(--panel);
     border:1px solid var(--line);
     border-radius:10px;
     padding:18px;
-    margin-top:16px;
+    margin-top:14px;
     page-break-inside: avoid;
   }
   .section-label{
@@ -171,22 +239,46 @@
     margin-bottom:12px;
   }
   .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .grid-4{ display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:12px; }
-  @media (max-width:640px){ .grid-4{ grid-template-columns:1fr 1fr; } .grid-2{ grid-template-columns:1fr; } }
+  .grid-4{ display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; }
+
   label{
     display:block; font-size:11px; color:var(--muted);
     margin-bottom:5px; letter-spacing:.02em;
   }
-  input[type=text], input[type=date], textarea, select{
+  input[type=text], input[type=password], input[type=email], input[type=number], textarea, select{
     width:100%;
     background:var(--panel-2);
     border:1px solid var(--line);
     border-radius:6px;
     color:var(--text);
-    padding:9px 10px;
+    padding:10px 12px;
     font-family:var(--sans);
     font-size:14px;
+    min-height: 42px;
   }
+
+  input[type=date] {
+    width: 100%;
+    background-color: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 42px;
+    height: 42px;
+    line-height: 1.2;
+    color-scheme: dark;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input[type=date]::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+    cursor: pointer;
+    padding: 2px;
+  }
+
   select{ appearance:none; -webkit-appearance:none;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%238b96a5'/></svg>");
     background-repeat:no-repeat; background-position:right 12px center; padding-right:28px;
@@ -195,12 +287,106 @@
     outline:2px solid var(--cyan);
     outline-offset:1px;
   }
-  textarea{ resize:vertical; min-height:60px; line-height:1.4; }
-  .links{ font-size:12.5px; color:var(--muted); margin-top:14px; line-height:1.8; }
-  .links a{ color:var(--cyan); text-decoration:none; margin-right:14px; }
+  textarea{ 
+    resize:vertical; 
+    min-height:70px; 
+    line-height:1.4;
+    overflow-y:hidden;
+  }
+  .links{ font-size:12.5px; color:var(--muted); margin-top:14px; line-height:2.2; }
+  .links a{ color:var(--cyan); text-decoration:none; margin-right:16px; display:inline-block; }
   .links a:hover{ text-decoration:underline; }
 
-  /* ---- category card ---- */
+  /* ---- Stopwatch Styling Redesign ---- */
+  .stopwatch-wrapper {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .stopwatch-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .sw-time {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--cyan);
+    letter-spacing: 0.05em;
+    line-height: 1;
+  }
+  .sw-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .sw-btn {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+    min-height: 38px;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .sw-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .sw-btn.start { background: var(--cyan-dim); border-color: var(--cyan); color: var(--cyan); }
+  .sw-btn.start.stop { background: var(--red); border-color: var(--red); color: #fff; }
+  .sw-btn.clear:hover { border-color: var(--red); color: var(--red); }
+
+  .sw-saved-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+  }
+  .sw-saved-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px 12px;
+    gap: 12px;
+  }
+  .sw-saved-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+  }
+  .sw-saved-time {
+    color: var(--cyan);
+    font-weight: 700;
+  }
+  .sw-delete-btn {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: var(--sans);
+  }
+  .sw-delete-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* ---- Category Card ---- */
   .cat{
     background:var(--panel);
     border:1px solid var(--line);
@@ -209,41 +395,76 @@
     margin-top:14px;
     page-break-inside: avoid;
   }
-  .cat-head{
-    display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
-  }
-  .cat-num{
-    font-family:var(--mono); font-size:11px; color:var(--muted);
-  }
+  .cat-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .cat-num{ font-family:var(--mono); font-size:11px; color:var(--muted); }
   .cat-title{ font-size:16px; font-weight:600; margin:2px 0 8px; }
   .cat-desc{ font-size:13px; color:var(--muted); line-height:1.55; margin-bottom:14px; white-space: pre-wrap; }
 
-  .scores{ display:flex; gap:8px; flex-wrap:wrap; }
+  .scores{ display:flex; gap:6px; flex-wrap:wrap; }
+  
+  /* Tooltip Wrapper Styles */
+  .tooltip-container {
+    position: relative;
+    display: flex;
+    flex: 1 1 0;
+  }
+  .score-btn.instructor-btn {
+    width: 100%;
+  }
+  .tooltip-container .tooltip-text {
+    visibility: hidden;
+    width: 220px;
+    background-color: var(--panel-2);
+    color: var(--text);
+    text-align: left;
+    border: 1px solid var(--cyan);
+    border-radius: 6px;
+    padding: 8px 10px;
+    position: absolute;
+    z-index: 100;
+    bottom: 125%; 
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: normal;
+    line-height: 1.4;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .tooltip-container:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+  }
+
   .score-btn{
-    flex:1 1 auto;
-    min-width:46px;
-    height:46px;
+    flex:1 1 0;
+    min-width:42px;
+    height:44px;
     border-radius:8px;
     border:1px solid var(--line);
     background:var(--panel-2);
     color:var(--text);
     font-family:var(--mono);
-    font-size:16px;
+    font-size:15px;
     font-weight:600;
     cursor:pointer;
-    transition:background .15s, border-color .15s, color .15s, transform .1s;
+    transition:background .15s, border-color .15s, color .15s;
+  }
+  .score-btn.instructor-btn {
+    font-size: 12px;
+    font-family: var(--sans);
+    padding: 0 4px;
   }
   .score-btn:hover{ border-color:var(--cyan); }
-  .score-btn:active{ transform:scale(0.95); }
   .score-btn.selected{
     background:var(--cyan);
     border-color:var(--cyan);
     color:#0b1210;
   }
-  .cat-tally{
-    font-family:var(--mono); font-size:11px; color:var(--muted);
-    margin-top:8px; text-align:right;
-  }
+  .cat-tally{ font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:8px; text-align:right; }
   .cat-tally span{ color:var(--cyan); font-weight:700; }
 
   .footer-total{
@@ -254,22 +475,20 @@
   }
   .footer-total .fnum{ font-family:var(--mono); font-size:22px; color:var(--cyan); font-weight:700; }
 
-  .reset-row{ text-align:center; margin-top:18px; }
+  .reset-row{ display:flex; justify-content:center; gap:10px; margin-top:18px; flex-wrap:wrap; }
   .reset-btn{
     background:none; border:1px solid var(--line); color:var(--muted);
     font-size:12px; padding:8px 16px; border-radius:6px; cursor:pointer;
-    font-family:var(--sans);
+    font-family:var(--sans); min-height: 38px;
   }
   .reset-btn:hover{ border-color:var(--red); color:var(--red); }
+  .clear-page-btn:hover{ border-color:var(--amber); color:var(--amber); }
 
-  .action-row{
-    display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
-    margin-top:16px;
-  }
+  .action-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:16px; }
   .action-btn{
     font-family:var(--sans); font-size:14px; font-weight:600;
-    padding:12px 26px; border-radius:8px; cursor:pointer;
-    border:1px solid var(--line); transition:background .15s, border-color .15s, opacity .15s;
+    padding:12px 22px; border-radius:8px; cursor:pointer;
+    min-height: 44px; border:1px solid var(--line); transition:background .15s, border-color .15s, opacity .15s;
   }
   .action-btn.primary{ background:var(--cyan); border-color:var(--cyan); color:#0b1210; }
   .action-btn.primary:hover{ opacity:.9; }
@@ -281,293 +500,256 @@
 
   .history-item{
     display:flex; justify-content:space-between; align-items:center;
-    gap:12px; padding:10px 12px; border:1px solid var(--line);
-    border-radius:8px; margin-top:8px; background:var(--panel-2);
+    gap:12px; padding:12px; border:1px solid var(--line);
+    border-radius:8px; margin-top:8px; background:var(--panel);
     flex-wrap:wrap;
   }
   .history-meta{ font-size:13px; }
   .history-meta .h-title{ font-weight:600; }
   .history-meta .h-sub{ color:var(--muted); font-size:11px; font-family:var(--mono); margin-top:2px; }
   .history-link{
-    font-family:var(--sans); font-size:12.5px; font-weight:600;
+    font-family:var(--sans); font-size:12px; font-weight:600;
     color:var(--cyan); text-decoration:none; border:1px solid var(--cyan);
-    padding:6px 12px; border-radius:6px; background:none; cursor:pointer;
+    padding:6px 12px; border-radius:6px; background:none; cursor:pointer; min-height: 34px;
   }
   .history-link:hover{ background:var(--cyan); color:#0b1210; }
   .history-edit{
-    font-family:var(--sans); font-size:12.5px; font-weight:600;
+    font-family:var(--sans); font-size:12px; font-weight:600;
     color:var(--amber); text-decoration:none; border:1px solid var(--amber);
-    padding:6px 12px; border-radius:6px; background:none; cursor:pointer;
+    padding:6px 12px; border-radius:6px; background:none; cursor:pointer; min-height: 34px;
   }
   .history-edit:hover{ background:var(--amber); color:#0b1210; }
-  .history-actions{ display:flex; gap:8px; align-items:center; }
+  .history-actions{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
   .history-delete{
-    font-family:var(--sans); font-size:12.5px; font-weight:600;
+    font-family:var(--sans); font-size:12px; font-weight:600;
     color:var(--muted); background:none; text-decoration:none;
     border:1px solid var(--line); padding:6px 12px; border-radius:6px;
-    cursor:pointer;
+    cursor:pointer; min-height: 34px;
   }
   .history-delete:hover{ border-color:var(--red); color:var(--red); }
   .history-empty{ font-size:13px; color:var(--muted); }
-  .history-note{ font-size:11.5px; color:var(--muted); margin-top:12px; line-height:1.5; }
 
-  /* Perfect light-mode PDF / Print CSS rules */
-  @media print {
+  #authView { display: none; }
+  .user-badge { font-family: var(--mono); font-size: 11px; color: var(--cyan); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .logout-btn {
+    background: none; border: 1px solid var(--line); color: var(--muted);
+    font-size: 11px; padding: 6px 10px; border-radius: 5px; cursor: pointer; transition: border-color .15s, color .15s; min-height: 32px;
+  }
+  .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+  .hud-menu-dropdown { position: relative; display: inline-block; }
+  .hud-menu-btn {
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+    padding: 8px 10px; border-radius: 7px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; transition: border-color .15s, background .15s, color .15s;
+    min-height: 38px; min-width: 38px;
+  }
+  .hud-menu-btn:hover, .hud-menu-dropdown:hover .hud-menu-btn { border-color: var(--cyan); color: var(--cyan); }
+  .hud-menu-content {
+    display: none; position: absolute; top: 100%; left: 0;
+    padding-top: 6px;
+    z-index: 1000; min-width: 280px;
+  }
+  .hud-menu-dropdown:hover .hud-menu-content { display: block; }
+  .hud-menu-inner {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5); padding: 6px 0;
+    max-height: 75vh; overflow-y: auto;
+  }
+  .hud-menu-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px;
+    color: var(--text); text-decoration: none; font-size: 13px; font-weight: 500;
+    cursor: pointer; background: none; border: none; width: 100%; text-align: left;
+    transition: background .15s, color .15s; min-height: 38px;
+  }
+  .hud-menu-item:hover { background: var(--panel-2); color: var(--cyan); }
+  .hud-menu-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--cyan);
+    font-weight: 700;
+    margin-left: auto;
+  }
+  .hud-menu-header {
+    border-top: 1px solid var(--line);
+    margin: 6px 0 4px;
+    padding: 6px 14px 2px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.75); z-index: 100;
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 24px 18px; max-width: 480px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .profile-field { margin-bottom: 12px; padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; }
+  .danger-zone { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .btn-danger { background: var(--red); color: #ffffff; border: none; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; min-height: 38px; }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 0 10px 40px; }
+    
+    .hud-inner { 
+      padding: 10px 12px; 
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .hud-menu-dropdown { order: 1; }
+    .hud-home-btn { order: 2; }
+    
+    #hudUserBadge { 
+      order: 3; 
+      margin-left: auto !important; 
+      margin-right: 0 !important;
+      font-size: 11px;
+      text-align: right;
+      justify-content: flex-end;
+    }
+    
+    .hud-title { 
+      order: 4; 
+      flex: 1 1 calc(100% - 110px); 
+      margin-top: 6px; 
+      padding-top: 6px;
+      border-top: 1px solid var(--line);
+    }
+    .hud-score { 
+      order: 5; 
+      margin-left: auto; 
+      margin-top: 6px; 
+      padding-top: 6px;
+    }
+    .hud-score .num { font-size: 24px; }
+    
+    .grid-4, .grid-2 { grid-template-columns: 1fr; }
+    .action-btn { width: 100%; text-align: center; justify-content: center; }
+    .score-btn { font-size: 14px; height: 42px; }
+    .landing-card { margin: 16px auto 0; padding: 20px 16px; }
+    .history-item { flex-direction: column; align-items: flex-start; }
+    .history-actions { width: 100%; justify-content: flex-end; margin-top: 6px; }
+    .scroll-nav { bottom: 16px; right: 16px; }
+    .stopwatch-top { flex-direction: column; align-items: flex-start; }
+    .sw-controls { width: 100%; justify-content: space-between; }
+    .sw-btn { flex: 1; text-align: center; }
+  }
+
+  @print {
     body { background: #ffffff !important; color: #111111 !important; }
     .wrap { max-width: 100% !important; padding: 0 !important; }
-    .no-print, .hud, .action-row, .reset-row, .links, .stopwatch, .scores, #landingView { display: none !important; }
+    .no-print, .hud, .action-row, .reset-row, .links, .stopwatch-wrapper, .scores, #landingView, #historyView, .modal-overlay, .scroll-nav, .quick-nav-container { display: none !important; }
     .card, .cat, .footer-total { 
-      background: #ffffff !important; 
-      border: 1px solid #d0d0d0 !important; 
-      color: #111111 !important; 
-      page-break-inside: avoid;
-      box-shadow: none !important;
-      margin-top: 10px !important;
-      padding: 12px 16px !important;
+      background: #ffffff !important; border: 1px solid #d0d0d0 !important; 
+      color: #111111 !important; page-break-inside: avoid; box-shadow: none !important;
+      margin-top: 10px !important; padding: 12px 16px !important;
     }
-    .hud-inner { background: #ffffff !important; border: 1px solid #cccccc !important; }
-    .hud-title, .section-label, .cat-title { color: #008080 !important; }
-    .hud-title strong { color: #111111 !important; }
-    .hud-score .num { color: #008080 !important; }
-    .fnum { color: #008080 !important; }
-    input[type=text], input[type=date], textarea, select { 
-      background: #fdfdfd !important; 
-      border: 1px solid #cccccc !important; 
-      color: #111111 !important; 
-      font-size: 13px !important;
-    }
-    textarea { min-height: 40px !important; }
-    .cat-desc { color: #555555 !important; }
-    .cat-tally span { color: #008080 !important; }
-  }
-
-  /* Auth Screen */
-  #authView {
-    display: block;
-  }
-  .auth-card {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 32px 24px;
-    max-width: 480px;
-    margin: 60px auto 0;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  }
-  .auth-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 20px;
-  }
-  .auth-tab {
-    flex: 1;
-    padding: 10px;
-    text-align: center;
-    font-family: var(--mono);
-    font-size: 12px;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--muted);
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    transition: color .15s, border-color .15s;
-  }
-  .auth-tab.active {
-    color: var(--cyan);
-    border-color: var(--cyan);
-    font-weight: 700;
-  }
-  .google-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    background: #ffffff;
-    color: #1a1f27;
-    border: 1px solid #d0d7de;
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-family: var(--sans);
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    margin-bottom: 18px;
-    transition: background .15s, border-color .15s;
-  }
-  .google-btn:hover {
-    background: #f4f6f8;
-    border-color: #bbbfc4;
-  }
-  .auth-divider {
-    display: flex;
-    align-items: center;
-    text-align: center;
-    color: var(--muted);
-    font-size: 11px;
-    font-family: var(--mono);
-    margin: 16px 0;
-  }
-  .auth-divider::before, .auth-divider::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px solid var(--line);
-  }
-  .auth-divider span {
-    padding: 0 10px;
-  }
-  .login-method-toggle {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-  .method-btn {
-    flex: 1;
-    padding: 8px;
-    font-size: 11px;
-    font-family: var(--mono);
-    border: 1px solid var(--line);
-    background: var(--panel-2);
-    color: var(--muted);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all .15s;
-  }
-  .method-btn.active {
-    border-color: var(--cyan);
-    color: var(--cyan);
-    background: var(--cyan-dim);
-    font-weight: 600;
-  }
-  .user-badge {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--cyan);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .logout-btn {
-    background: none;
-    border: 1px solid var(--line);
-    color: var(--muted);
-    font-size: 11px;
-    padding: 4px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: border-color .15s, color .15s;
-  }
-  .logout-btn:hover {
-    border-color: var(--red);
-    color: var(--red);
   }
 </style>
-<!-- Optional Firebase SDKs for Cloud Auth -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<!-- Supabase JS Client Library CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="wrap" id="pdfRoot">
 
-  <!-- Auth Screen -->
-  <div id="authView" class="no-print">
-    <div class="auth-card">
-      <div class="hud-title" style="margin-bottom:4px;">Zoox // Evaluator Portal</div>
-      <h2 style="margin:0 0 16px; font-weight:700; font-size:20px; color:var(--text);" id="authHeading">Sign In</h2>
-      
-      <!-- Optional Google Sign-In Button -->
-      <button type="button" class="google-btn" onclick="handleGoogleSignIn()">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-        Sign in with Google
-      </button>
-
-      <div class="auth-divider"><span>OR WITH USERNAME</span></div>
-
-      <!-- Auth Tabs -->
-      <div class="auth-tabs">
-        <button type="button" class="auth-tab active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
-        <button type="button" class="auth-tab" id="tabSignUp" onclick="switchAuthTab('signup')">Sign Up</button>
-      </div>
-
-      <!-- Sign In Form -->
-      <form id="signInForm" onsubmit="handleSignIn(event)">
-        <div style="margin-bottom:12px;">
-          <label>Username</label>
-          <input type="text" id="signinUsername" required placeholder="Enter your username">
-        </div>
-
-        <div style="margin-bottom:8px;">
-          <label>Authentication Mode</label>
-          <div class="login-method-toggle">
-            <button type="button" class="method-btn active" id="btnMethodPassword" onclick="setLoginMethod('password')">Use Password</button>
-            <button type="button" class="method-btn" id="btnMethodPin" onclick="setLoginMethod('pin')">Use PIN</button>
-          </div>
-        </div>
-
-        <div style="margin-bottom:16px;" id="signinPasswordGroup">
-          <label>Password</label>
-          <input type="password" id="signinPassword" placeholder="Enter password">
-        </div>
-
-        <div style="margin-bottom:16px; display:none;" id="signinPinGroup">
-          <label>4-6 Digit PIN</label>
-          <input type="password" id="signinPin" placeholder="Enter PIN" maxlength="6" pattern="[0-9]*" inputmode="numeric">
-        </div>
-
-        <div id="signinError" style="color:var(--red); font-size:12px; margin-bottom:12px; display:none;"></div>
-
-        <button type="submit" class="action-btn primary" style="width:100%; font-size:15px;">Sign In</button>
-      </form>
-
-      <!-- Sign Up Form -->
-      <form id="signUpForm" onsubmit="handleSignUp(event)" style="display:none;">
-        <div class="grid-2" style="margin-bottom:12px;">
-          <div>
-            <label>First Name</label>
-            <input type="text" id="signupFirstName" required placeholder="First Name">
-          </div>
-          <div>
-            <label>Last Name</label>
-            <input type="text" id="signupLastName" required placeholder="Last Name">
-          </div>
-        </div>
-        <div style="margin-bottom:12px;">
-          <label>Username</label>
-          <input type="text" id="signupUsername" required placeholder="Choose username">
-        </div>
-        <div style="margin-bottom:12px;">
-          <label>Email Address</label>
-          <input type="email" id="signupEmail" required placeholder="name@domain.com">
-        </div>
-        <div style="margin-bottom:12px;">
-          <label>Password</label>
-          <input type="password" id="signupPassword" required placeholder="Create password">
-        </div>
-        <div style="margin-bottom:16px;">
-          <label>PIN (4-6 Digits)</label>
-          <input type="password" id="signupPin" required placeholder="Create backup PIN" maxlength="6" pattern="[0-9]*" inputmode="numeric">
-        </div>
-
-        <div id="signupError" style="color:var(--red); font-size:12px; margin-bottom:12px; display:none;"></div>
-
-        <button type="submit" class="action-btn primary" style="width:100%; font-size:15px;">Create Account</button>
-      </form>
-
-      <!-- Optional Firebase Notice / Status -->
-      <div style="margin-top:20px; font-size:11px; color:var(--muted); text-align:center;">
-        <span id="firebaseStatusText">Auth Mode: Local Storage & Optional Firebase SSO</span>
+  <!-- Custom Yes / No Confirmation Modal -->
+  <div id="customConfirmModal" class="modal-overlay no-print" style="display:none;">
+    <div class="modal-card" style="max-width: 400px; text-align: center;">
+      <h3 style="margin: 0 0 12px; font-size: 18px; color: var(--text); font-weight: 700;">Confirmation</h3>
+      <p id="customConfirmMessage" style="font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.5; white-space: pre-wrap;"></p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button type="button" class="action-btn secondary" id="customConfirmNoBtn" style="flex: 1; min-height: 40px;">No</button>
+        <button type="button" class="action-btn primary" id="customConfirmYesBtn" style="flex: 1; min-height: 40px;">Yes</button>
       </div>
     </div>
   </div>
 
+  <div class="scroll-nav no-print">
+    <button type="button" class="scroll-btn" onclick="scrollToTop()" title="Scroll to Top" aria-label="Scroll to Top">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+    </button>
+    <button type="button" class="scroll-btn" onclick="scrollToBottom()" title="Scroll to Bottom" aria-label="Scroll to Bottom">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+    </button>
+  </div>
 
-  <!-- Landing Screen -->
-  <div id="landingView" class="no-print" style="display:none;">
+  <div id="landingView" class="no-print">
+    <div class="hud" style="position:relative; padding-top:12px;">
+      <div class="hud-inner">
+        <div class="hud-menu-dropdown no-print">
+          <button class="hud-menu-btn" type="button" title="Menu" aria-label="Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <div class="hud-menu-content">
+            <div class="hud-menu-inner">
+              <button class="hud-menu-item" type="button" onclick="openProfileModal()">
+                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Profile</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('All')">
+                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> All Saved Reports</span>
+                <span class="hud-menu-count cnt-all">(0)</span>
+              </button>
+              
+              <div class="hud-menu-header">Saved Reports by Module</div>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('SWO')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> SWO Reports</span>
+                <span class="hud-menu-count cnt-swo">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('SVO')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> SVO Reports</span>
+                <span class="hud-menu-count cnt-svo">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('VO')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> VO Reports</span>
+                <span class="hud-menu-count cnt-vo">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('Manual Check-in')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> Manual Check-in Reports</span>
+                <span class="hud-menu-count cnt-manual-check-in">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('ZIP')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> ZIP Reports</span>
+                <span class="hud-menu-count cnt-zip">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('Highway')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> Highway Reports</span>
+                <span class="hud-menu-count cnt-highway">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('Instructor')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> Instructor Reports</span>
+                <span class="hud-menu-count cnt-instructor">(0)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="hud-title">
+          Zoox // L3 Field Eval
+          <strong>Portal Dashboard</strong>
+        </div>
+      </div>
+    </div>
+
     <div class="landing-card">
-      <div class="hud-title" style="margin-bottom:6px;">Zoox // L3 Field Eval</div>
-      <h2 style="margin:0 0 18px; font-weight:700; font-size:20px; color:var(--text);">Select Training</h2>
+      <div id="landingUserBadge" class="user-badge" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--line);">
+        <span>Supabase Cloud Mode</span>
+      </div>
+      <div class="hud-title" style="margin-bottom:6px;">Select Mission</div>
+      <h2 style="margin:0 0 18px; font-weight:700; font-size:20px; color:var(--text);">Select Training Module</h2>
       <div style="margin-bottom:20px;">
         <label>Training Module</label>
         <select id="initialTrainingSelect" style="font-size:15px; padding:11px 12px;">
@@ -578,142 +760,313 @@
           <option value="Manual Check-in">Manual Check-in</option>
           <option value="ZIP">ZIP</option>
           <option value="Highway">Highway</option>
+          <option value="Instructor">Instructor</option>
         </select>
       </div>
-      <button class="action-btn primary" style="width:100%; font-size:15px;" onclick="confirmStartTraining()">Start Evaluation</button>
+      <button class="action-btn primary" style="width:100%; font-size:15px; margin-bottom:10px;" onclick="confirmStartTraining()">Start Evaluation</button>
+      <button class="action-btn secondary" id="resumeDraftBtn" style="width:100%; font-size:15px; display:none;" onclick="resumeDraftFromLanding()">Resume Last Draft</button>
     </div>
   </div>
 
-  <!-- Main Evaluation View -->
+  <div id="profileModal" class="modal-overlay no-print" style="display:none;">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0; font-size:18px; color:var(--text); font-weight:700;">Evaluator Profile</h3>
+        <button type="button" onclick="closeProfileModal()" style="background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1;">&times;</button>
+      </div>
+      
+      <div class="profile-field">
+        <label style="margin:0; font-size:10px; color:var(--muted); font-family:var(--mono);">STORAGE MODE</label>
+        <div style="font-weight:600; font-size:15px; color:var(--text); margin-top:2px;">Supabase Cloud Synchronization</div>
+      </div>
+
+      <div class="danger-zone">
+        <div style="font-family:var(--mono); font-size:11px; color:var(--red); letter-spacing:.1em; text-transform:uppercase; margin-bottom:12px;">Data Management</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+          <div>
+            <strong style="font-size:13px; color:var(--red); display:block;">Clear All Records</strong>
+            <span style="font-size:11px; color:var(--muted);">Permanently remove saved records from Supabase Cloud.</span>
+          </div>
+          <button type="button" class="btn-danger" onclick="handleDeleteAccount()">Clear Records</button>
+        </div>
+      </div>
+
+      <div style="margin-top:20px; text-align:right;">
+        <button type="button" class="action-btn secondary" onclick="closeProfileModal()" style="padding:8px 18px; font-size:13px;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="historyView" class="no-print" style="display:none;">
+    <div class="hud" style="position:relative; padding-top:12px;">
+      <div class="hud-inner">
+        <div class="hud-menu-dropdown no-print">
+          <button class="hud-menu-btn" type="button" title="Menu" aria-label="Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <div class="hud-menu-content">
+            <div class="hud-menu-inner">
+              <button class="hud-menu-item" type="button" onclick="openProfileModal()">
+                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Profile</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('All')">
+                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> All Saved Reports</span>
+                <span class="hud-menu-count cnt-all">(0)</span>
+              </button>
+              
+              <div class="hud-menu-header">Saved Reports by Module</div>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('SWO')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> SWO Reports</span>
+                <span class="hud-menu-count cnt-swo">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('SVO')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> SVO Reports</span>
+                <span class="hud-menu-count cnt-svo">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('VO')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> VO Reports</span>
+                <span class="hud-menu-count cnt-vo">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('Manual Check-in')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> Manual Check-in Reports</span>
+                <span class="hud-menu-count cnt-manual-check-in">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('ZIP')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> ZIP Reports</span>
+                <span class="hud-menu-count cnt-zip">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('Highway')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> Highway Reports</span>
+                <span class="hud-menu-count cnt-highway">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('Instructor')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> Instructor Reports</span>
+                <span class="hud-menu-count cnt-instructor">(0)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button class="hud-home-btn no-print" onclick="attemptGoHome()" title="Return to Training Selection">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          Home
+        </button>
+
+        <div class="hud-title">
+          <span id="historyPageTitle">Zoox // Saved Records</span>
+          <strong id="historyPageSubtitle">Saved Reports & PDFs</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <div id="historySectionsContainer"></div>
+    </div>
+  </div>
+
   <div id="mainFormWrap" style="display:none;">
 
     <div class="hud">
       <div class="hud-inner">
-        <button class="hud-home-btn no-print" onclick="goHome()" title="Return to Training Selection">
+        <div class="hud-menu-dropdown no-print">
+          <button class="hud-menu-btn" type="button" title="Menu" aria-label="Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <div class="hud-menu-content">
+            <div class="hud-menu-inner">
+              <button class="hud-menu-item" type="button" onclick="openProfileModal()">
+                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Profile</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="attemptOpenHistory('All')">
+                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> All Saved Reports</span>
+                <span class="hud-menu-count cnt-all">(0)</span>
+              </button>
+              
+              <div class="hud-menu-header">Saved Reports by Module</div>
+              <button class="hud-menu-item" type="button" onclick="attemptOpenHistory('SWO')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> SWO Reports</span>
+                <span class="hud-menu-count cnt-swo">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="attemptOpenHistory('SVO')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> SVO Reports</span>
+                <span class="hud-menu-count cnt-svo">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="attemptOpenHistory('VO')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> VO Reports</span>
+                <span class="hud-menu-count cnt-vo">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="attemptOpenHistory('Manual Check-in')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> Manual Check-in Reports</span>
+                <span class="hud-menu-count cnt-manual-check-in">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="attemptOpenHistory('ZIP')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> ZIP Reports</span>
+                <span class="hud-menu-count cnt-zip">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="attemptOpenHistory('Highway')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> Highway Reports</span>
+                <span class="hud-menu-count cnt-highway">(0)</span>
+              </button>
+              <button class="hud-menu-item" type="button" onclick="openHistoryView('Instructor')">
+                <span><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; width:18px;">•</span> Instructor Reports</span>
+                <span class="hud-menu-count cnt-instructor">(0)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button class="hud-home-btn no-print" onclick="attemptGoHome()" title="Return to Training Selection">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
           Home
         </button>
+
+        <div id="hudUserBadge" class="user-badge no-print">Supabase Cloud</div>
+
         <div class="hud-title">
           Zoox // L3 Field Eval
           <strong id="hudTrainingTitle">Training Mission Grading Form</strong>
+          <div class="autosave-badge" id="autoSaveBadge">Draft Auto-Saved</div>
         </div>
-        <div id="hudUserBadge" class="user-badge no-print" style="display:none; margin-right:12px;"></div>
-        <div class="hud-score">
-          <div class="label">Total Score</div>
+        
+        <div class="hud-score" id="hudScoreWrap">
+          <div class="label" id="hudScoreLabel">Total Score</div>
           <span class="num" id="totalScore">0</span><span class="max" id="maxScoreDisplay"> / 55</span>
           <div class="gauge"><div class="gauge-fill" id="gaugeFill"></div></div>
         </div>
       </div>
     </div>
 
-    <div class="card no-print">
-      <div class="section-label">Mission Timer</div>
-      <div class="stopwatch">
-        <div class="sw-time" id="swDisplay">00:00:00</div>
-        <div class="sw-controls">
-          <button class="sw-btn start" id="swStartBtn" onclick="swToggle()">Start</button>
-          <button class="sw-btn" onclick="swSave()">Save</button>
-          <button class="sw-btn clear" onclick="swClear()">Clear</button>
-        </div>
-      </div>
-      <div class="sw-saved" id="swSavedRow" style="display:none;">
-        <label>Setup and GOR Time</label>
-        <div class="sw-saved-time" id="swSavedTime">00:00:00</div>
+    <!-- Quick Action / Navigation Sticky Tab Section -->
+    <div class="quick-nav-container no-print">
+      <div class="quick-nav-bar" id="quickNavBar">
+        <button type="button" class="quick-nav-btn" onclick="scrollToSection('sessionInfoCard')">Session Info</button>
+        <button type="button" class="quick-nav-btn" id="navTimerBtn" onclick="scrollToSection('missionTimerCard')">Mission Timer</button>
+        <button type="button" class="quick-nav-btn" onclick="scrollToSection('quickCaptureCard')">Quick-Capture</button>
+        <button type="button" class="quick-nav-btn" id="navDetailedCardBtn" onclick="scrollToSection('detailedFeedbackCard')">Detailed Feedback</button>
+        <button type="button" class="quick-nav-btn" onclick="scrollToSection('generalFeedbackCard')">General Feedback</button>
       </div>
     </div>
 
-    <div class="card">
-      <div class="section-label" id="sessionLabel">Session Info</div>
-      <div class="grid-4">
+    <!-- Session Info Card (Stationary) -->
+    <div class="card" id="sessionInfoCard" style="margin-top:14px;">
+      <div class="section-label">Session Info</div>
+      <div class="grid-4" id="sessionInfoGrid" style="margin-top:12px;">
         <div>
           <label>Training Type</label>
-          <select id="activeTrainingType" onchange="onTrainingTypeChange()">
+          <select id="activeTrainingType" onchange="onTrainingTypeChangeRequest(this)">
             <option value="SWO">SWO</option>
             <option value="SVO">SVO</option>
             <option value="VO">VO</option>
             <option value="Manual Check-in">Manual Check-in</option>
             <option value="ZIP">ZIP</option>
             <option value="Highway">Highway</option>
+            <option value="Instructor">Instructor</option>
           </select>
         </div>
         <div><label>Date</label><input type="date" id="dateField"></div>
         <div><label>Trainee Name</label><input type="text" id="traineeNameField"></div>
-        <div>
+        <div id="missionFieldWrapper">
           <label>Current Mission</label>
           <select id="missionField" onchange="toggleCustomMission()"></select>
           <input type="text" id="customMissionField" placeholder="Specify custom mission..." style="display:none; margin-top:6px;">
         </div>
-        <div><label>Ticket #</label><input type="text" id="ticketField"></div>
+        <div id="ticketFieldWrapper"><label>Ticket #</label><input type="text" id="ticketField"></div>
         <div><label>Routes</label><input type="text" id="routesField"></div>
       </div>
-      <div class="links no-print">
-        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdgYFCcr-CCcrYUSxO3T-yfszDsi_H37oKqi8YlFCVQXOlNBg/viewform" target="_blank" rel="noopener noreferrer">Feedback Form</a>
-        <a href="https://docs.google.com/document/d/1sARns0cw7H_cxzmmSbReWjJmkQtxdrW2H9iXpfjm1cc/edit?tab=t.0" target="_blank" rel="noopener noreferrer">Reference Form</a>
-        <a href="https://docs.google.com/spreadsheets/d/1WjfJMmvB-r3D71cworspn2kIwy9gVw4b6cVKGew4QNY/edit?resourcekey=&gid=1281611939#gid=1281611939" target="_blank" rel="noopener noreferrer">Training Mission Feedback Form</a>
-        <a href="https://docs.google.com/spreadsheets/d/1TTj28Ew1idihm__hDihn6o_yq33vinquETDK_--iuW0/edit?gid=216191385#gid=216191385" target="_blank" rel="noopener noreferrer">L3 Grading Criteria</a>
+      <div class="links" id="dynamicLinksContainer" style="margin-top:14px; margin-bottom:0;">
+        <!-- Dynamically rendered based on active training tab -->
+      </div>
+    </div>
+
+    <!-- Mission Timer Card (Redesigned matching image style) -->
+    <div class="card" id="missionTimerCard" style="margin-top:14px;">
+      <div class="section-label">Mission Timer</div>
+      <div class="stopwatch-wrapper">
+        <div class="stopwatch-top">
+          <div class="sw-time" id="swDisplay">00:00:00 Mins</div>
+          <div class="sw-controls">
+            <button class="sw-btn start" id="swStartBtn" onclick="swToggle()">Start</button>
+            <button class="sw-btn" onclick="swSave()">Save Time</button>
+            <button class="sw-btn clear" onclick="swResetTimer()">Reset Timer</button>
+          </div>
+        </div>
+        <div class="sw-saved-container" id="swSavedContainer" style="display:none;"></div>
       </div>
     </div>
 
     <div id="categories"></div>
 
-    <div class="card" style="margin-top:14px;">
+    <div class="card" id="quickCaptureCard" style="margin-top:14px;">
       <div class="section-label">Quick-Capture</div>
-      <div class="grid-2">
-        <div>
+      <div class="grid-2" id="quickCaptureGrid">
+        <div id="qcAddNotesWrap" style="grid-column: 1 / -1;">
           <label>Additional Notes</label>
-          <textarea id="qcAddNotes" style="min-height:90px;" placeholder="General observations..."></textarea>
+          <textarea id="qcAddNotes" class="auto-number-box" placeholder="General observations..."></textarea>
         </div>
-        <div>
-          <label>ODD Callouts</label>
-          <textarea id="qcOddCallouts" style="min-height:90px;" placeholder="ODD callouts made..."></textarea>
+        <div id="qcOddCalloutsWrap">
+          <label>ODD Callouts (<span id="count-qcOddCallouts">0</span>)</label>
+          <textarea id="qcOddCallouts" class="auto-number-box" placeholder="ODD callouts made..."></textarea>
         </div>
-        <div>
-          <label>Disengagements</label>
-          <textarea id="qcDisengagements" style="min-height:90px;" placeholder="Disengagement details..."></textarea>
+        <div id="qcDisengagementsWrap">
+          <label>Disengagements (<span id="count-qcDisengagements">0</span>)</label>
+          <textarea id="qcDisengagements" class="auto-number-box" placeholder="Disengagement details..."></textarea>
         </div>
-        <div>
-          <label>Data Collection</label>
-          <textarea id="qcDataCol" style="min-height:90px;" placeholder="Data collection hashtags/notes..."></textarea>
+        <div id="qcDataColWrap">
+          <label>Data Collection (<span id="count-qcDataCol">0</span>)</label>
+          <textarea id="qcDataCol" class="auto-number-box" placeholder="Data collection hashtags/notes..."></textarea>
         </div>
       </div>
     </div>
 
-    <div class="card" style="margin-top:14px;">
-      <div class="section-label">Strengths and Improvements</div>
+    <div class="card" id="detailedFeedbackCard" style="margin-top:14px;">
+      <div class="section-label">Strengths and Improvements (Detailed)</div>
       <div style="margin-top:4px;">
-        <label>Strengths <span style="color:var(--muted); text-transform:none; font-family:var(--sans); font-size:12px;">(min. 3 examples of what the trainee does well or is improving on)</span></label>
-        <textarea id="strengthsField" style="min-height:100px;" placeholder="What the trainee does well or is getting better at..."></textarea>
+        <label>Please give at minimum 3 examples on what the trainee does well or is getting better at:</label>
+        <textarea id="strengthsDetailedField" class="auto-number-box" placeholder="What the trainee does well..."></textarea>
       </div>
-      <div style="margin-top:16px;">
-        <label>Improvements <span style="color:var(--muted); text-transform:none; font-family:var(--sans); font-size:12px;">(min. 2–3 examples — required for any category scoring 2 or below)</span></label>
-        <textarea id="improvementsField" style="min-height:100px;" placeholder="Areas the trainee can improve on..."></textarea>
+      <div style="margin-top:14px;">
+        <label>Please give at minimum 2-3 examples on what the trainee can improve on for any categories scoring 2 or below:</label>
+        <textarea id="improvementsDetailedField" class="auto-number-box" placeholder="Areas the trainee can improve on..."></textarea>
       </div>
     </div>
 
-    <div class="footer-total">
+    <div class="card" id="generalFeedbackCard" style="margin-top:14px;">
+      <div class="section-label">Strengths & Improvements</div>
+      <div style="margin-top:4px;">
+        <label>Strengths</label>
+        <textarea id="strengthsField" class="auto-number-box" placeholder="General strengths..."></textarea>
+      </div>
+      <div style="margin-top:14px;">
+        <label>Improvements</label>
+        <textarea id="improvementsField" class="auto-number-box" placeholder="General improvements..."></textarea>
+      </div>
+    </div>
+
+    <div class="footer-total" id="footerTotalCard">
       <div>
         <div style="font-size:12px; color:var(--muted);">Overall</div>
-        <div style="font-size:13px;">Pass threshold set by instructor</div>
+        <div style="font-size:13px;" id="footerThresholdText">Pass threshold set by instructor</div>
       </div>
       <div class="fnum"><span id="totalScore2">0</span><span id="maxScoreDisplay2"> / 55</span></div>
     </div>
 
     <div class="reset-row no-print">
       <button class="reset-btn" onclick="resetForm()">Reset all scores</button>
+      <button class="reset-btn clear-page-btn" onclick="clearPage()">Clear Page</button>
     </div>
 
     <div class="action-row no-print">
       <button class="action-btn primary" id="saveBtn" onclick="saveDocument()">Save Evaluation</button>
       <button class="action-btn docs" id="docsBtn" onclick="copyForGoogleDocs()">Copy for Google Docs</button>
-      <button class="action-btn secondary" onclick="createNewForm()">Create New / Select Training</button>
-    </div>
-
-    <div class="card no-print" style="margin-top:16px;">
-      <div class="section-label">Saved History</div>
-      <div id="historyList">
-        <div class="history-empty" id="historyEmpty">No documents saved yet.</div>
-      </div>
-      <div class="history-note">Saved evaluations are kept in browser storage. Click "Edit" to load an entry onto the screen and update it, or "Open PDF" to view and print the PDF report in a new tab.</div>
+      <button class="action-btn secondary" onclick="attemptCreateNew()">Create New / Select Training</button>
     </div>
 
   </div>
@@ -721,7 +1074,62 @@
 </div>
 
 <script>
-// Category Definitions
+// ==========================================
+// SUPABASE CLOUD CONFIGURATION & CLIENT
+// ==========================================
+const SUPABASE_URL = 'https://vxpufrahrnwmtgltjstd.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_tRjMtsoo9aT-6n7dzj9p-w_HsUqJ520';
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const TABLE_NAME = 'evaluations';
+
+function showCustomConfirm(message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customConfirmModal');
+    const msgEl = document.getElementById('customConfirmMessage');
+    const yesBtn = document.getElementById('customConfirmYesBtn');
+    const noBtn = document.getElementById('customConfirmNoBtn');
+    
+    msgEl.textContent = message;
+    modal.style.display = 'flex';
+    
+    const newYes = yesBtn.cloneNode(true);
+    const newNo = noBtn.cloneNode(true);
+    yesBtn.parentNode.replaceChild(newYes, yesBtn);
+    noBtn.parentNode.replaceChild(newNo, noBtn);
+    
+    document.getElementById('customConfirmYesBtn').addEventListener('click', () => {
+      modal.style.display = 'none';
+      resolve(true);
+    });
+    document.getElementById('customConfirmNoBtn').addEventListener('click', () => {
+      modal.style.display = 'none';
+      resolve(false);
+    });
+  });
+}
+
+function safeGetStorage(key) {
+  try { return localStorage.getItem(key); } catch(e) { return null; }
+}
+function safeSetStorage(key, val) {
+  try { localStorage.setItem(key, val); } catch(e) {}
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function scrollToBottom() {
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+}
+
+function scrollToSection(elementId) {
+  const el = document.getElementById(elementId);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
 const swoCategories = [
   ["Setup","Navigates terminal and CoreDash to appropriately launch the software. Familiar with rendition groups, common error messages on startup, localizing, creating and clipping log, and updating Dispatch through mission thread. Time from arriving to the KITT to first engagement is within 15 mins."],
   ["Checklist","Efficiently completes and submits the pre-flight checklist in the order listed and displays familiarity with each step."],
@@ -739,146 +1147,527 @@ const swoCategories = [
 const svoCategories = [
   ["Setup", "Demonstrates knowledge of SVO-specific setup procedures, including launching, setup, and adjustment of Sidekick and Sidekick monitor, choice of appropriate log type, and is able to engage in autonomy within 20 minutes of arriving to the vehicle."],
   ["Sidekick", "Operators are glancing at Sidekick when needed, and specifically in the following scenarios:\n-Prior to engagement, to make sure systems are ready and environment is safe, TeleOps engagement, Approaching a lane blockage, Approaching / Stopping at the crest of a hill, When Hero appears stuck for unknown reasons\nOperators are not glancing at Sidekick for long amounts of time (~2 seconds or longer)"],
-  ["ADR", "Demonstrates how to submit an ADR comment. As long as road conditions are safe, submits ADR comments within 60 seconds of disengagement. Demonstrates safe manual driving and dropping an ADR simultaneously. Correctly identifies Fleet sense hazards and escalates within 10-20 feet. Formats spoken note that comprehensively explains reasoning behind disengagement and includes any relevant keywords/hashtags. Adequately describes the reason for disengagement by using all components of B.R.A.D in PUDO, OTHER, or STUCK disengagement reports (B.R.A.D. items do not need to be in that specific order) Operators are not triggering ADR button during any maneuver other than going straight."],
+  ["ADR", "Demonstrates how to submit an ADR comment. As long as road conditions are safe, submits ADR comments within 60 seconds of disengagement. Demonstrates safe manual driving and dropping an ADR simultaneously. Correctly identifies Fleet sense hazards and escalates within 10-20 feet. Formats spoken note that comprehensively explains reasoning behind disengagement and includes any relevant keywords/hashtags. Adequately describes the reason for disengagement by using all components of B.R.A.D in PUDO, OTHER, or STUCK disengagement reports."],
   ["ODD & Guidelines Knowledge", "Disengages for both Mandatory and Cautionary disengagements, both from general L3 driving and SVO-specific. Includes all non-auto release Nogos."],
-  ["Safety", "Abides by all SVO-specific safety protocols including: Enlists a spotter when reversing/parking in garage or lot. Stashes phone out of line of sight before engaging in autonomy. Communicate to dispatch if/when they are feeling fatigued or complacent in SVO duties.\n\nDemonstrates safe manual driving with gradual braking and acceleration, use of signals, keeps a steady line for lateral maneuvering, and abides by all rules of the road and posted signage."],
+  ["Safety", "Abides by all SVO-specific safety protocols including: Enlists a spotter when reversing/parking in garage or lot. Stashes phone out of line of sight before engaging in autonomy. Communicate to dispatch if/when feeling fatigued."],
   ["Incident Response", "Demonstrates solo incident response protocol, including submitting the correct notes and ZFR, engaging and exchanging information with the third party, and escalating incident to dispatch."],
-  ["Autonomous Handling", "Correctly reacts to NOGOs, steering jerks, unexpected braking and/or acceleration. Navigate through all autonomous driving scenarios safely. Has smooth and appropriately timed engagements and disengagements when required."],
-  ["Best Practices", "Abiding by operational best practices, including:\n-Engaging only when NOT in an intersection/junction or in the middle of a maneuver.\n-Check Sidekick prior to engaging to ensure that conditions are optimal even if the Autonomy Ready icon is present.\n-Speaking clearly in a normal tone. Avoid yelling or mumbling speech.\n-Ensuring the cause of disengagement is no longer presenting a risk before recording an ADR.\n-Not beginning or ending an ADR/Fleet sense in mid-turn, during lane changes and when traversing or about to traverse into an intersection/junction to avoid having to locate and toggle the ADR button when in an unnatural position or in high focus areas.\n\n1) In-depth knowledge of ODD and General Guidance\n2) Taking the initiative to call for disengagements\n3) Familiarity with log file naming conventions\n4) Exiting logger when stationary\n5) Closing assigned tickets promptly\n6) Bring up vehicle by following checklist and execute a clean vehicle shutdown\n7) Taking the initiative to maintain the cleanliness of team areas (office space, vehicles, kitchen, sidewalks outside of office and garage, etc)\n8) Constant awareness of operating environment\n9) In-depth knowledge of AO policies\n10) Steward of mission safety (spotters in reverse, spotters for parallel parking)"]
+  ["Autonomous Handling", "Correctly reacts to NOGOs, steering jerks, unexpected braking and/or acceleration. Navigate through all autonomous driving scenarios safely."],
+  ["Best Practices", "Abiding by operational best practices, including engaging only when NOT in an intersection/junction and checking Sidekick prior to engaging."]
 ];
 
 const voCategories = [
-  ["Driver Setup", "Positions driver seat in an ergonomic way, appropriately adjusts mirrors, has their AVT permit and license with them."],
-  ["Manual Handling", "Demonstrates smooth and safe braking, acceleration, lane changes, merging, turns, parking, and speed control while driving in manual. Uses signals and other means of positively communicating with other drivers. Follows all rules of the road."],
-  ["ODD and Operator Guidelines", "Displays knowledge of latest operator guidelines through communication, situational awareness, and appropriate disengagements. Proctor is allowed to ask the reason behind or method of the disengagement for clarification, if not obvious."],
+  ["Driver Setup", "Positions driver seat ergonomically, adjusts mirrors, has AVT permit and license."],
+  ["Manual Handling", "Demonstrates smooth and safe braking, acceleration, lane changes, merging, turns, parking, and speed control."],
+  ["ODD and Operator Guidelines", "Displays knowledge of latest operator guidelines through communication, situational awareness, and appropriate disengagements."],
   ["Latest Software Release", "Displays knowledge of newest vehicle behaviors and reacts appropriately in-vehicle."],
-  ["Autonomous Handling", "Correctly reacts to NOGOs, steering jerks, unexpected braking and/or acceleration. Navigate through all autonomous driving scenarios safely. Has smooth and appropriately timed engagements and disengagements when required."],
-  ["Driver Communication", "Identifies vehicle behavior and obstacles correctly, communicating any concerns or dynamic situations to the SWO in order to drive safely in autonomous mode."],
-  ["Visual Search", "Situational awareness, tracking of surrounding objects with headwork and looking in mirrors. For example: Checking rearview mirror during harsh or unconventional brake behaviors from Hero and operator looking over shoulder during any merge behavior."],
-  ["Social Cues", "Avoids social cues when driving in autonomous. Understands the value in avoiding cues."],
-  ["Route Knowledge", "Demonstrates familiarity with route beginning and ending points, best locations to setup, and how to best utilize available time with route selection."],
-  ["Policy", "Demonstrates a thorough knowledge of all policies, including but not limited to the mobile device policy, in-vehicle media policy, and appropriate interactions with a curious public. Safety critical best practices: always using a spotter when reversing, not engaging in intersection."],
-  ["Best Practices", "Displays working knowledge of safety critical and non-safety critical best practices. Non-safety critical: bringing vehicle to a stop when logger needs to be clipped, maintaining a clean in-vehicle working environment. Safety critical best practices: always using a spotter when reversing into a parking spot in garage/lot, avoiding engaging in intersections.\n\n1) In-depth knowledge of ODD and General Guidance\n2) Taking the initiative to call for disengagements\n3) Familiarity with log file naming conventions\n4) Exiting logger when stationary\n5) Closing assigned tickets promptly\n6) Bring up vehicle by following checklist and execute a clean vehicle shutdown\n7) Taking the initiative to maintain the cleanliness of team areas (office space, vehicles, kitchen, sidewalks outside of office and garage, etc)\n8) Constant awareness of operating environment\n9) In-depth knowledge of AO policies\n10) Steward of mission safety (spotters in reverse, spotters for parallel parking)"]
+  ["Autonomous Handling", "Correctly reacts to NOGOs, steering jerks, unexpected braking/acceleration. Navigates scenarios safely."],
+  ["Driver Communication", "Identifies vehicle behavior and obstacles correctly, communicating concerns to SWO."],
+  ["Visual Search", "Situational awareness, tracking of surrounding objects with headwork and looking in mirrors."],
+  ["Social Cues", "Avoids social cues when driving in autonomous."],
+  ["Route Knowledge", "Demonstrates familiarity with route beginning and ending points, best locations to setup."],
+  ["Policy", "Demonstrates knowledge of mobile device policy, in-vehicle media policy, and public interactions."],
+  ["Best Practices", "Displays working knowledge of safety critical and non-safety critical best practices."]
 ];
 
 const manualCheckInCategories = [
   ["Manual Driving", "Demonstrates safe manual driving with gradual braking and acceleration."],
-  ["Using all tools in Vehicle", "Demonstrates the use of indicators (signals), hazards, speedometer, all mirrors, and/or back up camera."],
+  ["Using all tools in Vehicle", "Demonstrates the use of indicators, hazards, speedometer, mirrors, and backup camera."],
   ["Body Positioning", "Demonstrates the use of proper hand placement and sitting upright when driving."],
   ["Maintaining Spatial Awareness", "Demonstrates proficiency in maintaining spatial awareness."],
   ["Rules of the Road & Signage", "Abides by all rules of the road and posted signage."],
-  ["Maintaining Proper Lane Positioning", "Demonstrate the ability to stay in the center of the lane when driving."],
-  ["Parking", "Pulling in and pulling out of a parking spot: Demonstrate the ability to pull in and pull out of a parking spot at a Zoox facility using all the tools available (backup camera, spotter, mirrors, etc)."],
+  ["Maintaining Proper Lane Positioning", "Demonstrates ability to stay in center of lane when driving."],
+  ["Parking", "Pulling in and pulling out of parking spots at Zoox facilities using all tools."],
   ["Speed Limit", "Abiding by all posted speed limits."]
 ];
 
 const highwayCategories = [
-  ["Vehicle Setup", "Appropriately launches the software, chooses routes based on mission ticket instructions. Selects correct ZRN, Mission mode, and updates mission thread on correct selections."],
-  ["Manual Driving & Hand Placement", "Demonstrates safe manual driving with gradual braking and acceleration. Maintains proper 9 and 3 hand placement and uses turn signals appropriately."],
-  ["Spatial Awareness & Using all tools in Vehicle", "Demonstrates excellent spatial awareness by frequently checking blind spots and mirrors, maintains effective communication on agent reactions and requests additional information when necessary from the SWO, Regularly checks speedometer to ensure proper speed"],
-  ["Disengagement Methods", "Demonstrates the use of proper Disengagement methods. Instructor may ask what disengagement method was used to disengage"],
-  ["ODD and Operator Guidelines", "Displays knowledge of ODD and most recent Operator Guidelines by correctly disengaging for both mandatory and cautionary guidelines (if needed) without an Instructor prompting and calling for disengagements."],
-  ["Highway Incident Response", "Abides by all Zoox in-vehicle policies including Mobile Device Policy, In-vehicle Activity Policy\n\nCan verbally describe the incident response steps (PACER), Highway specific pullover locations, what safety gear is required to wear before exiting the vehicle, and if in an emergency situation i.e. (fire, smoke, or other signals from the high voltage battery appear) when asked by an instructor."]
+  ["Vehicle Setup", "Launches software, chooses routes based on ticket, selects correct ZRN and Mission mode."],
+  ["Manual Driving & Hand Placement", "Demonstrates safe manual driving with gradual braking and acceleration. Maintains proper 9 and 3 hand placement."],
+  ["Spatial Awareness & Tools", "Demonstrates spatial awareness by checking blind spots and mirrors, maintains clear communication."],
+  ["Disengagement Methods", "Demonstrates proper disengagement methods."],
+  ["ODD and Operator Guidelines", "Displays knowledge of ODD and operator guidelines by disengaging appropriately."],
+  ["Highway Incident Response", "Abides by in-vehicle policies. Verbally describes PACER, pullover locations, and safety gear."]
 ];
 
 const zipCategories = [
-  ["Vehicle Setup", "Demonstrates knowledge of ZIP-specific setup procedures, including launching, setup, and adjustment of Sidekick, Choice of appropriate log type, and ensuring the in-vehicle zello phones volume is highest for any needed communication from Mission Control, and storing personal Items In-Vehicle"],
-  ["Autonomous Handling", "Navigates through all autonomous driving scenarios safely. Disengages for Safety Critical or Zip Specific ODD guidelines, Has smooth and appropriate timed disengagements."],
-  ["Operator Driving Tasks", "When approaching a PUDO operator glances no more than 2 seconds to Sidekick/CoreDash Overlay for Mission Information, Demonstrates how to safely pick up/drop off riders, Verifies rider badge before unlocking vehicle, Hands remain at their respective sides 9 & 3 and foot remains hovering over pedals during PUDO."],
-  ["SVO & Rider Interactions", "The operator demonstrates strong interaction skills through consistent rider greetings and departure announcements. Additionally effectively follow established escalation protocols i.e. (Warning a ZIP Rider to follow the Zero Tolerance Policy, Revoking a ZIP Service before the rider is in-vehicle, How to Terminate a ZIP Ride In-Progress, IRP Incident Response rider questions, and Pulling over for Troubleshooting/escalating issues with trip)"],
-  ["ODD and Operator Guidelines", "Displays knowledge of VO standard operating procedures by abiding by ZIP saftey critical ODD situations. (if needed) without an Instructor prompting and calling for disengagements."],
-  ["ZIP Best Practices", "Abiding by ZIP & SVO best practices, including:\n\n1) Engage only when NOT in an intersection/junction or in the middle of a maneuver.\n2) Check Sidekick prior to engaging to ensure that conditions are optimal even if the Autonomy Ready icon is present.\n3) Speak clearly in a normal tone. Avoid yelling or mumbling speech.\n4) Ensure the cause of disengagement is no longer presenting a risk before recording an ADR.\n5) Allow up to 3 minutes for TeleOps to sync to your vehicle\n6) Give TeleOps/Mission Controller a chance to release Hero from a NoGo (This include all NoGos auto-release and non-auto-release). Please apply the standard 3 minute wait to allow TeleOps/MC a chance to release Hero.\n7) Disengage for Safety Critical situations\n8) Don't begin or end an ADR or a Call to ZMC in mid-turn, during lane changes and when traversing or about to traverse into an intersection/junction to avoid having to locate and toggle the button when in an unnatural position or in high focus areas.\n9) Select a music playlist before starting mission on the radio app.\n10) Wait at least a half second before speaking your ADR after triggering the ADR button.\n11) Always wait until PLANNER is green and you can see a planner path or a stop gate in front of the KITT on SK before engaging.\n12) Leveraging Sidekick\n-Before engaging\n-When TeleOps is engaged\n-Hero is not proceeding\n-Approaching / Stopped at the crest of hills\n-Road blockage"]
+  ["Vehicle Setup", "Demonstrates knowledge of ZIP-specific setup procedures, Sidekick adjustments, Zello phone volume."],
+  ["Autonomous Handling", "Navigates scenarios safely. Disengages for Safety Critical or ZIP Specific ODD guidelines."],
+  ["Operator Driving Tasks", "Glances max 2s to Sidekick during PUDO. Hands 9 & 3, foot hovering over pedals."],
+  ["SVO & Rider Interactions", "Greetings/departures, follows escalation protocols (warning riders, terminating rides)."],
+  ["ODD and Operator Guidelines", "Displays knowledge of VO standard operating procedures and ZIP safety critical guidelines."],
+  ["ZIP Best Practices", "Abides by ZIP & SVO best practices (engaging safely, Sidekick checks, 3-min TeleOps sync)."]
 ];
+
+const instructorCategories = [
+  [
+    "ODD and Operational Knowledge", 
+    "The instructor demonstrates a current knowledge of ODD Guidelines and operational procedures, incorporating the most up-to-date methods of execution in their teachings. They teach and reference procedures from the L3 KITT Operator Manual and do not deviate or teach 'alternatives' to what is presented there."
+  ],
+  [
+    "Teaching Performance", 
+    "Instructor makes a habit of explaining the 'why' behind a step or procedure and not just explaining the 'how' of doing it. They are able to break down complex ideas into easily digestable steps and actively gague whether the trainee is feeling overwhelmed."
+  ],
+  [
+    "Feedback", 
+    "Instructor demonstrates a knowledge of when it is appropriate to give feedback, limiting spoken comments when the vehicle is in autonomous mode and waiting until vehicle is in manual to address bad habits and larger topics. Feedback is delivered in a professional and supportive way, never using overly critical or harsh comments, comparative language (ie, other people in your class are doing better), or crass/inappropriate language."
+  ],
+  [
+    "General Communication", 
+    "An instructor's overall attitude and demeanour should remain calm, supportive, and patient with all trainees, even if trainees are acting in a defensive or difficult way. As with feedback, language used with trainees should always remain professional and never drfit into crass, inappropriate, or overly critical territory."
+  ],
+  [
+    "Administrative Tasks", 
+    "Instructor promptly fills out trainee feedback form after mission (at latest, beginning of next day) and attends each instructor sync when in-office. Instructor also makes a point of having trainee close JIRA tickets at the end of mission, and escalates any red flags or safety concerns to AO Leadership immediately."
+  ],
+  [
+    "Time Management", 
+    "Instructor demonstrates ability to set good time management habits into trainees and prioritizes getting vehicles into autonomy. They encourage teams to return to HQ no more than 10 minutes prior to the end of shift, and not take more break time than is necessary to properly execute mission."
+  ],
+  [
+    "Policy", 
+    "Abides by all Zoox in-vehicle policies including Mobile Device Policy, In-vehicle Activity Policy, and how to properly engage with the public if approached. Can adequately describe the incident response steps (PACER) when asked by an instructor (in-vehicle audit)"
+  ]
+];
+
+const instructorHoverDetails = {
+  0: {
+    "Below Standards": "More than twice an instructor demonstrates lack of working knowledge of guidelines and workflows presented L3 KITT Operator Manual, ODD Guidelines list, and recent updates on #alphasops-updates",
+    "Meeting Standard": "Most of the time an instructor demonstrates working knowledge of guidelines and workflows presented L3 KITT Operator Manual, ODD Guidelines list, allowing for 1-2 guidelines or procedure that may need clarity. Actively uses resources to remedy any shortcomings and points out resources to trainees.",
+    "Above Standard": "Instructor demonstrates perfect working knowledge of guidelines and workflows presented L3 KITT Operator Manual, ODD Guidelines list all of the time with nothing needing clarity. Actively uses resources to remedy any shortcomings and points out resources to trainees."
+  },
+  1: {
+    "Below Standards": "Instructor shows a habitual pattern of teaching only the 'how' of procedures and not the 'why' behind them and/or habitually overwhelms the trainee with too much information to implement simultaneously.",
+    "Meeting Standard": "More often than not, Instructor shows a habitual pattern of including the 'why' behind proceedures as well as the 'how', and doesn't overload trainee with too many new actions to implement simultaneously.",
+    "Above Standard": "Instructor continuously explains the 'why' behind procedures as well as the 'how', and is careful not to overload trainee with too many new actions to implement simultaneously and guages for understanding."
+  },
+  2: {
+    "Below Standards": "Instructor shows a habit of giving trainee feedback while in autonomy, and not allowing trainee to focus on callouts, or does not utilize moments when vehicle is in manual or autonomous time in very 'quiet' environments to convey guidance, and/or Spoken or written feedback includes language that could be considered overly critical, unprofessional, or offensive.",
+    "Meeting Standard": "More often than not, instructor limits spoken feedback while in autonomy, allowing trainee to focus on callouts and utilizes time when vehicle is in manual or autonomous time in very 'quiet' environments to convey guidance and Spoken or written feedback does not include language that could be considered overly critical, unprofessional, or offensive.",
+    "Above Standard": "Instructor always limits spoken feedback while in autonomy, allowing trainee to focus on callouts and utilizes time when vehicle is in manual or autonomous time in very 'quiet' environments to convey guidance and Spoken or written feedback does not include language that could be considered overly critical, unprofessional, or offensive."
+  },
+  3: {
+    "Below Standards": "Instructor displays unsupportive or unprofessional demeanour (becoming visibly angry or aggressive), or uses language that is inappropriate in a professional setting (crass language, overly critical or comparitive)",
+    "Meeting Standard": "Instructor demeanour remains supportive and professional. Crass or overly critical statements are never used. Instructor keeps trainee engaged in a minimal way.",
+    "Above Standard": "Instructor demeanour remains supportive and professional. Crass or overly critical statements are never used. Instructor goes to lengths to keep trainee engaged in a positive way."
+  },
+  4: {
+    "Below Standards": "Instructor shows a habit of filling in feedback form late (ie, after the beginning of their mission the next day). Categories are either missing a score, or categories graded a '2' or below aren't reflected in written feedback, and/or Two or more training JIRA tickets from the previous week are still open, and/or Trainee misses more than one instructor sync in the previous four weeks, with no medical reasoning or previous notice.",
+    "Meeting Standard": "More often than not, instructor shows a habit of filling in feedback form before the beginning of their mission the next day. Each category is scored, and categories graded a '2' or below are reflected in written feedback, and One training JIRA tickets from the previous week is left open, and Instructor misses one instructor sync in the previous four weeks, with no medical reasoning or previous notice.",
+    "Above Standard": "Instructor always fills in feedback form before the beginning of their mission the next day. Each category is scored, and categories graded a '2' or below are always reflected in written feedback. No training JIRA tickets from the previous week are left open Trainee misses no instructor syncs in the previous four weeks or, if they did, had a medical reasoning or gave Training Associate previous notice."
+  },
+  5: {
+    "Below Standards": "Instructor is NOT consistently encouraging trainee to be efficient and allows them to squander time during procedures that they've previously shown competency in, and/or Instructor encourages trainee to take more break time than is necessary to properly execute mission, and/or Instructor encourages team to return to HQ more than 10 minutes before the end of shift.",
+    "Meeting Standard": "More often than not, instructor encourages trainee to be efficient, not allowing them to squander time during procedures that they've previously shown competency in, and Instructor encourages trainee to not take more break time than is necessary to properly execute mission, and Instructor encourages team to return to HQ no more than 10 minutes before the end of shift.",
+    "Above Standard": "Instructor continuously encourages trainee to be efficient, not allowing them to squander time during procedures that they've previously shown competency in, and Instructor encourages trainee to not take more break time than is necessary to properly execute mission, and Instructor encourages team to return to HQ no more than 10 minutes before the end of shift."
+  },
+  6: {
+    "Below Standards": "At least one safety measure that can be demonstrated was not performed adequately. If escalation is necessary, trainee does not follow the correct protocol.",
+    "Meeting Standard": "All safety measures that can be demonstrated in and out of the vehicle are upheld. If escalation is necessary, trainee follows the correct protocol.",
+    "Above Standard": "Abides by all Zoox policies in situations both in and out of vehicle, including any organic emergency situation during the checkride that necessitated Incident Response."
+  }
+};
 
 let activeCategories = swoCategories;
 let scores = [];
 const maxPerCategory = 5;
 let currentEditingId = null;
+let savedSwTimes = []; 
+let savedHistory = [];
+let autoSaveTimer = null;
+let currentHistoryModuleFilter = 'All';
+let previousTrainingType = 'SWO';
 
 function getCategoriesForType(type) {
-  if (type === 'ZIP') {
-    return zipCategories;
-  } else if (type === 'Highway') {
-    return highwayCategories;
-  } else if (type === 'VO') {
-    return voCategories;
-  } else if (type === 'Manual Check-in') {
-    return manualCheckInCategories;
-  } else if (type === 'SVO') {
-    return svoCategories;
-  } else if (type === 'SWO') {
-    return swoCategories;
+  if (type === 'ZIP') return zipCategories;
+  if (type === 'Highway') return highwayCategories;
+  if (type === 'VO') return voCategories;
+  if (type === 'Manual Check-in') return manualCheckInCategories;
+  if (type === 'SVO') return svoCategories;
+  if (type === 'Instructor') return instructorCategories;
+  return swoCategories;
+}
+
+function autoResizeTextarea(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = (el.scrollHeight + 2) + 'px';
+}
+
+function updateLinksContainer(type) {
+  const container = document.getElementById('dynamicLinksContainer');
+  if (!container) return;
+  
+  let linksHtml = '';
+  
+  if (type === 'SWO' || type === 'SVO' || type === 'VO') {
+    linksHtml += `<a href="https://docs.google.com/forms/d/e/1FAIpQLSdgYFCcr-CCcrYUSxO3T-yfszDsi_H37oKqi8YlFCVQXOlNBg/viewform" target="_blank" rel="noopener noreferrer">Miami L3 Training Mission Feedback Form</a>`;
   }
-  return [];
+  
+  if (type === 'SWO' || type === 'SVO' || type === 'VO') {
+    linksHtml += `<a href="https://docs.google.com/document/d/1sARns0cw7H_cxzmmSbReWjJmkQtxdrW2H9iXpfjm1cc/edit?tab=t.0" target="_blank" rel="noopener noreferrer">Reference Form</a>`;
+    linksHtml += `<a href="https://docs.google.com/spreadsheets/d/1WjfJMmvB-r3D71cworspn2kIwy9gVw4b6cVKGew4QNY/edit?resourcekey=&gid=1281611939#gid=1281611939" target="_blank" rel="noopener noreferrer">Training Mission Feedback Form</a>`;
+  }
+
+  if (type === 'SWO') {
+    linksHtml += `<a href="https://forms.monday.com/forms/a45f3ad12ff281b0962147c048778d32?r=use1" target="_blank" rel="noopener noreferrer">SWO Checkride</a>`;
+  } else if (type === 'VO') {
+    linksHtml += `<a href="https://forms.monday.com/forms/fe019e9aa2d47a963c8a3cd2bf30a772?r=use1" target="_blank" rel="noopener noreferrer">VO Checkride</a>`;
+  } else if (type === 'SVO') {
+    linksHtml += `<a href="https://forms.monday.com/forms/26cf1d45cad0404b171e9a3112a33501?r=use1" target="_blank" rel="noopener noreferrer">SVO Checkride</a>`;
+  }
+
+  if (type !== 'Instructor') {
+    linksHtml += `<a href="https://docs.google.com/spreadsheets/d/1TTj28Ew1idihm__hDihn6o_yq33vinquETDK_--iuW0/edit?gid=216191385#gid=216191385" target="_blank" rel="noopener noreferrer">L3 Grading Criteria</a>`;
+  }
+
+  if (type === 'Instructor') {
+    linksHtml += `<a href="https://docs.google.com/spreadsheets/d/1eJR2t6geY8Qg3_JKpg8hvoPgc_AVsYfbQAENPkBudwA/edit?gid=0#gid=0" target="_blank" rel="noopener noreferrer">Instructor Audit</a>`;
+  }
+
+  if (type === 'Manual Check-in') {
+    linksHtml += `<a href="https://docs.google.com/forms/d/e/1FAIpQLSfuowtTFkCiZFz_1gygFhYM9ftzY3QlGDlP6l5QE13byuxVtA/viewform" target="_blank" rel="noopener noreferrer">Miami L3 Training Manual Driving Check-In Feedback Form</a>`;
+  }
+
+  container.innerHTML = linksHtml;
+}
+
+function updateFormLayoutForType(type) {
+  const isInstructorOrStandardText = (type === 'Instructor' || type === 'Manual Check-in' || type === 'ZIP' || type === 'Highway');
+  const isInstructor = (type === 'Instructor');
+  
+  const timerCard = document.getElementById('missionTimerCard');
+  if (timerCard) timerCard.style.display = isInstructor ? 'none' : 'block';
+  
+  const qcAddWrap = document.getElementById('qcAddNotesWrap');
+  const qcOdd = document.getElementById('qcOddCalloutsWrap');
+  const qcDis = document.getElementById('qcDisengagementsWrap');
+  const qcDat = document.getElementById('qcDataColWrap');
+
+  if (qcAddWrap) {
+    if (isInstructor) {
+      qcAddWrap.style.gridColumn = '1 / -1';
+    } else {
+      qcAddWrap.style.gridColumn = 'auto';
+    }
+  }
+
+  if (qcOdd) qcOdd.style.display = isInstructor ? 'none' : 'block';
+  if (qcDis) qcDis.style.display = isInstructor ? 'none' : 'block';
+  if (qcDat) qcDat.style.display = isInstructor ? 'none' : 'block';
+
+  const detailedCard = document.getElementById('detailedFeedbackCard');
+  if (detailedCard) detailedCard.style.display = isInstructor ? 'none' : 'block';
+
+  const ticketWrap = document.getElementById('ticketFieldWrapper');
+  if (ticketWrap) ticketWrap.style.display = isInstructor ? 'none' : 'block';
+
+  const hudScoreWrap = document.getElementById('hudScoreWrap');
+  const footerCard = document.getElementById('footerTotalCard');
+  if (hudScoreWrap) hudScoreWrap.style.display = isInstructorOrStandardText ? 'none' : 'block';
+  if (footerCard) footerCard.style.display = isInstructorOrStandardText ? 'none' : 'flex';
+
+  const navTimer = document.getElementById('navTimerBtn');
+  const navDetailed = document.getElementById('navDetailedCardBtn');
+  if (navTimer) navTimer.style.display = isInstructor ? 'none' : 'block';
+  if (navDetailed) navDetailed.style.display = isInstructor ? 'none' : 'block';
+
+  updateLinksContainer(type);
 }
 
 function renderCategoryCards() {
   const catContainer = document.getElementById('categories');
+  if (!catContainer) return;
   catContainer.innerHTML = '';
   scores = new Array(activeCategories.length).fill(null);
 
-  if (activeCategories.length === 0) {
-    const activeType = document.getElementById('activeTrainingType').value;
-    catContainer.innerHTML = `
-      <div class="card" style="text-align:center; padding:36px 20px; color:var(--muted); margin-top:14px;">
-        <div style="font-family:var(--mono); font-size:12px; letter-spacing:.12em; color:var(--cyan); margin-bottom:6px; text-transform:uppercase;">${activeType} Module</div>
-        <div style="font-size:15px; color:var(--text);">No evaluation categories defined for this training type yet.</div>
-      </div>
-    `;
-  } else {
-    activeCategories.forEach(([title, desc], i) => {
-      const card = document.createElement('div');
-      card.className = 'cat';
-      card.innerHTML = `
-        <div class="cat-head">
-          <div>
-            <div class="cat-num">CATEGORY ${String(i+1).padStart(2,'0')} / ${String(activeCategories.length).padStart(2,'0')}</div>
-            <div class="cat-title" id="catTitle-${i}">${title}</div>
-          </div>
-        </div>
-        <div class="cat-desc">${desc}</div>
-        <div class="scores no-print" id="scores-${i}"></div>
-        <div class="cat-tally" id="tally-${i}">Score: <span>0</span> / ${maxPerCategory}</div>
-        <div style="margin-top:12px;" class="cat-notes-wrap">
-          <label>Notes</label>
-          <textarea id="catNotes-${i}" placeholder="Observations for this category..."></textarea>
-        </div>
-      `;
-      catContainer.appendChild(card);
+  const type = document.getElementById('activeTrainingType').value;
+  const useStandardText = (type === 'Instructor' || type === 'Manual Check-in' || type === 'ZIP' || type === 'Highway');
+  const isInstructor = (type === 'Instructor');
 
-      const scoreRow = card.querySelector(`#scores-${i}`);
+  activeCategories.forEach(([title, desc], i) => {
+    const card = document.createElement('div');
+    card.className = 'cat';
+    card.id = `catCard-${i}`;
+    
+    let scoresHtml = `<div class="scores no-print" id="scores-${i}"></div>`;
+    let tallyHtml = `<div class="cat-tally" id="tally-${i}">Score: <span>0</span> / ${maxPerCategory}</div>`;
+    if (useStandardText) {
+      tallyHtml = `<div class="cat-tally" id="tally-${i}">Rating: <span style="color:var(--cyan);">Not Selected</span></div>`;
+    }
+
+    card.innerHTML = `
+      <div class="cat-head">
+        <div>
+          <div class="cat-num">CATEGORY ${String(i+1).padStart(2,'0')} / ${String(activeCategories.length).padStart(2,'0')}</div>
+          <div class="cat-title" id="catTitle-${i}">${title}</div>
+        </div>
+      </div>
+      <div class="cat-desc">${desc}</div>
+      ${scoresHtml}
+      ${tallyHtml}
+      <div style="margin-top:12px;" class="cat-notes-wrap">
+        <label>Notes</label>
+        <textarea id="catNotes-${i}" class="auto-number-box" placeholder="Observations for this category..." oninput="autoResizeTextarea(this)"></textarea>
+      </div>`;
+    catContainer.appendChild(card);
+
+    const scoreRow = card.querySelector(`#scores-${i}`);
+    if (useStandardText) {
+      const options = ["Below Standards", "Meeting Standard", "Above Standard"];
+      options.forEach(optText => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'tooltip-container';
+
+        const btn = document.createElement('button');
+        btn.className = 'score-btn instructor-btn';
+        btn.textContent = optText;
+        btn.type = 'button';
+
+        const tooltip = document.createElement('span');
+        tooltip.className = 'tooltip-text';
+        
+        if (isInstructor && instructorHoverDetails[i] && instructorHoverDetails[i][optText]) {
+          tooltip.textContent = instructorHoverDetails[i][optText];
+        } else {
+          if (optText === "Below Standards") tooltip.textContent = "Requires frequent correction or fails to meet criteria.";
+          else if (optText === "Meeting Standard") tooltip.textContent = "Consistently meets expectations and operational criteria.";
+          else if (optText === "Above Standard") tooltip.textContent = "Exceeds expectations with high situational awareness.";
+        }
+
+        btn.addEventListener('click', () => {
+          if (scores[i] === optText) {
+            scores[i] = null;
+            btn.classList.remove('selected');
+            card.querySelector(`#tally-${i} span`).textContent = 'Not Selected';
+          } else {
+            scores[i] = optText;
+            scoreRow.querySelectorAll('.score-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            card.querySelector(`#tally-${i} span`).textContent = optText;
+          }
+          triggerAutoSave();
+        });
+
+        wrapper.appendChild(btn);
+        wrapper.appendChild(tooltip);
+        scoreRow.appendChild(wrapper);
+      });
+    } else {
       for (let s = 0; s <= maxPerCategory; s++) {
         const btn = document.createElement('button');
         btn.className = 'score-btn';
         btn.textContent = s;
         btn.type = 'button';
         btn.addEventListener('click', () => {
-          scores[i] = s;
-          scoreRow.querySelectorAll('.score-btn').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          card.querySelector(`#tally-${i} span`).textContent = s;
+          if (scores[i] === s) {
+            scores[i] = null;
+            btn.classList.remove('selected');
+            card.querySelector(`#tally-${i} span`).textContent = '0';
+          } else {
+            scores[i] = s;
+            scoreRow.querySelectorAll('.score-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            card.querySelector(`#tally-${i} span`).textContent = s;
+          }
           updateTotal();
+          triggerAutoSave();
         });
         scoreRow.appendChild(btn);
       }
+    }
+  });
+
+  if (!useStandardText) {
+    const maxTotal = activeCategories.length * maxPerCategory;
+    document.getElementById('maxScoreDisplay').textContent = ` / ${maxTotal}`;
+    document.getElementById('maxScoreDisplay2').textContent = ` / ${maxTotal}`;
+    updateTotal();
+  }
+  updateSetupTitleDisplay();
+  attachAutoNumberListeners();
+}
+
+function populateMissionDropdown() {
+  if (!missionField) return;
+  missionField.innerHTML = '';
+  const placeholderOpt = document.createElement('option');
+  placeholderOpt.textContent = 'Select mission...';
+  placeholderOpt.value = '';
+  placeholderOpt.disabled = true;
+  placeholderOpt.selected = true;
+  missionField.appendChild(placeholderOpt);
+
+  const type = document.getElementById('activeTrainingType').value;
+  let options = [];
+
+  if (type === 'Instructor') {
+    options = [
+      'Day 2',
+      'Day 3',
+      'Day 4',
+      'Day 5',
+      'Day 6 (Practice between Assessment #1 & #2)',
+      'Other'
+    ];
+  } else {
+    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+    const weekTypes = ['SWO Training', 'SVO Training', 'VO Training'];
+    weekTypes.forEach(t => {
+      [1, 2].forEach(week => {
+        days.forEach(day => { options.push(`${t} Week ${week} - ${day}`); });
+      });
+      if (t === 'SWO Training') options.push('SWO Training Mock CR', 'SWO Training CR', 'SWO Training Refresher');
+      else if (t === 'SVO Training') options.push('SVO Training Mock CR', 'SVO Training CR', 'SVO Training Refresher');
+      else if (t === 'VO Training') options.push('VO Training Manual Check-in');
     });
+    options.push('Other');
   }
 
-  const maxTotal = activeCategories.length * maxPerCategory;
-  document.getElementById('maxScoreDisplay').textContent = ` / ${maxTotal}`;
-  document.getElementById('maxScoreDisplay2').textContent = ` / ${maxTotal}`;
-  
-  if (savedSwTimeValue) {
-    updateSetupTitle(savedSwTimeValue);
+  options.forEach(opt => {
+    const el = document.createElement('option');
+    el.value = opt; el.textContent = opt;
+    missionField.appendChild(el);
+  });
+}
+
+function updateQuickCaptureCounts() {
+  ['qcAddNotes', 'qcOddCallouts', 'qcDisengagements', 'qcDataCol'].forEach(id => {
+    const el = document.getElementById(id);
+    const countEl = document.getElementById(`count-${id}`);
+    if (el && countEl) {
+      const val = el.value.trim();
+      if (!val) {
+        countEl.textContent = '0';
+      } else {
+        const matches = val.match(/^\d+\./gm);
+        countEl.textContent = matches ? matches.length : 1;
+      }
+    }
+  });
+}
+
+function attachAutoNumberListeners() {
+  document.querySelectorAll('textarea.auto-number-box').forEach(textarea => {
+    if (textarea.dataset.hasNumberListener) return;
+    textarea.dataset.hasNumberListener = 'true';
+
+    textarea.addEventListener('focus', function() {
+      autoResizeTextarea(this);
+      if (this.value.trim() === '') {
+        this.value = '1. ';
+        autoResizeTextarea(this);
+      }
+      updateQuickCaptureCounts();
+    });
+
+    textarea.addEventListener('input', function() {
+      autoResizeTextarea(this);
+      updateQuickCaptureCounts();
+    });
+
+    textarea.addEventListener('paste', function(e) {
+      e.preventDefault();
+      const pastedData = (e.clipboardData || window.clipboardData).getData('text');
+      if (!pastedData) return;
+
+      const lines = pastedData.split(/\r?\n/);
+      let currentLines = this.value ? this.value.split(/\r?\n/) : [];
+      
+      let nextNum = 1;
+      for (let i = currentLines.length - 1; i >= 0; i--) {
+        const match = currentLines[i].match(/^(\d+)\.\s/);
+        if (match) {
+          nextNum = parseInt(match[1], 10) + 1;
+          break;
+        }
+      }
+
+      const formattedLines = lines.map(line => {
+        const cleaned = line.replace(/^\d+[\.\)]\s*/, '').trim();
+        if (!cleaned) return '';
+        const lineNum = nextNum++;
+        return `${lineNum}. ${cleaned}`;
+      }).filter(l => l !== '');
+
+      const cursorPos = this.selectionStart;
+      const textBefore = this.value.substring(0, cursorPos);
+      const textAfter = this.value.substring(this.selectionEnd);
+
+      const insertion = (textBefore && !textBefore.endsWith('\n') ? '\n' : '') + formattedLines.join('\n') + (textAfter && !textAfter.startsWith('\n') ? '\n' : '');
+      
+      this.value = textBefore + insertion + textAfter;
+      const newPos = textBefore.length + insertion.length;
+      this.setSelectionRange(newPos, newPos);
+      
+      autoResizeTextarea(this);
+      updateQuickCaptureCounts();
+      triggerAutoSave();
+    });
+
+    textarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const cursorPos = this.selectionStart;
+        const textBefore = this.value.substring(0, cursorPos);
+        const textAfter = this.value.substring(cursorPos);
+        
+        const lines = textBefore.split('\n');
+        let nextNum = 1;
+        for (let i = lines.length - 1; i >= 0; i--) {
+          const match = lines[i].match(/^(\d+)\.\s/);
+          if (match) {
+            nextNum = parseInt(match[1], 10) + 1;
+            break;
+          }
+        }
+
+        const insertion = `\n${nextNum}. `;
+        this.value = textBefore + insertion + textAfter;
+        const newCursorPos = cursorPos + insertion.length;
+        this.setSelectionRange(newCursorPos, newCursorPos);
+        
+        autoResizeTextarea(this);
+        this.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+  });
+}
+
+async function onTrainingTypeChangeRequest(selectEl) {
+  const newType = selectEl.value;
+  if (newType === previousTrainingType) return;
+
+  const confirmed = await showCustomConfirm("Would you like to start a new evaluation for this training type?\n\nYes to clear and start fresh, No to keep current form fields");
+  if (confirmed) {
+    currentEditingId = null;
+    clearAutoSaveDraft();
+    document.getElementById('saveBtn').textContent = 'Save Evaluation';
+    document.querySelectorAll('#pdfRoot input[type=text], #pdfRoot textarea').forEach(el => {
+      el.value = '';
+      autoResizeTextarea(el);
+    });
+    setDateToday();
+    swResetTimer();
+    savedSwTimes = [];
+    renderSavedStopwatches();
+    
+    previousTrainingType = newType;
+    onTrainingTypeChange();
+  } else {
+    previousTrainingType = newType;
+    onTrainingTypeChange();
   }
-  updateTotal();
 }
 
 function onTrainingTypeChange() {
   const type = document.getElementById('activeTrainingType').value;
+  previousTrainingType = type;
   activeCategories = getCategoriesForType(type);
   document.getElementById('hudTrainingTitle').textContent = `${type} Training Mission Grading Form`;
+  updateFormLayoutForType(type);
+  populateMissionDropdown();
   renderCategoryCards();
+  triggerAutoSave();
 }
 
 function confirmStartTraining() {
@@ -887,20 +1676,70 @@ function confirmStartTraining() {
     alert("Please select a training module.");
     return;
   }
+  
+  // Clear any existing draft and reset fields for a completely fresh evaluation
+  clearAutoSaveDraft();
+  currentEditingId = null;
+  document.getElementById('saveBtn').textContent = 'Save Evaluation';
+  document.querySelectorAll('#pdfRoot input[type=text], #pdfRoot textarea').forEach(el => {
+    el.value = '';
+    autoResizeTextarea(el);
+  });
+  setDateToday();
+  swResetTimer();
+  savedSwTimes = [];
+  renderSavedStopwatches();
+
   document.getElementById('activeTrainingType').value = sel;
+  previousTrainingType = sel;
   document.getElementById('landingView').style.display = 'none';
+  document.getElementById('historyView').style.display = 'none';
   document.getElementById('mainFormWrap').style.display = 'block';
   onTrainingTypeChange();
+  updateQuickCaptureCounts();
+}
+
+async function attemptGoHome() {
+  if (document.getElementById('mainFormWrap').style.display !== 'none') {
+    const confirmed = await showCustomConfirm("Do you want to save your evaluation before leaving?");
+    if (confirmed) {
+      await saveDocumentInternal();
+    }
+  }
+  goHome();
+}
+
+async function attemptOpenHistory(moduleFilter) {
+  if (document.getElementById('mainFormWrap').style.display !== 'none') {
+    const confirmed = await showCustomConfirm("Do you want to save your evaluation before leaving?");
+    if (confirmed) {
+      await saveDocumentInternal();
+    }
+  }
+  openHistoryView(moduleFilter);
+}
+
+async function attemptCreateNew() {
+  const confirmed = await showCustomConfirm("Do you want to save your evaluation before starting a new one?");
+  if (confirmed) {
+    await saveDocumentInternal();
+  }
+  createNewForm();
 }
 
 function goHome() {
   document.getElementById('mainFormWrap').style.display = 'none';
+  document.getElementById('historyView').style.display = 'none';
   document.getElementById('landingView').style.display = 'block';
+  checkLandingDraft();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function updateTotal(){
-  const total = scores.reduce((sum, v) => sum + (v || 0), 0);
+  const type = document.getElementById('activeTrainingType').value;
+  if (type === 'Instructor' || type === 'Manual Check-in' || type === 'ZIP' || type === 'Highway') return;
+
+  const total = scores.reduce((sum, v) => sum + (typeof v === 'number' ? v : 0), 0);
   const max = activeCategories.length * maxPerCategory;
   document.getElementById('totalScore').textContent = total;
   document.getElementById('totalScore2').textContent = total;
@@ -915,21 +1754,223 @@ function resetScores(){
       scoreRow.querySelectorAll('.score-btn').forEach(b=>b.classList.remove('selected'));
     }
     const tallySpan = document.querySelector(`#tally-${i} span`);
-    if (tallySpan) tallySpan.textContent = '0';
+    if (tallySpan) {
+      const type = document.getElementById('activeTrainingType').value;
+      const useStandardText = (type === 'Instructor' || type === 'Manual Check-in' || type === 'ZIP' || type === 'Highway');
+      tallySpan.textContent = useStandardText ? 'Not Selected' : '0';
+    }
   }
   updateTotal();
+  triggerAutoSave();
 }
 
-function resetForm(){
-  if(!confirm('Clear all selected scores?')) return;
+async function resetForm(){
+  const confirmed = await showCustomConfirm('Clear all selected scores?');
+  if(!confirmed) return;
   resetScores();
 }
 
-// ---- Stopwatch ----
+async function clearPage() {
+  const confirmed = await showCustomConfirm('Clear the entire page including all inputs, notes, and scores?');
+  if (!confirmed) return;
+  
+  currentEditingId = null;
+  clearAutoSaveDraft();
+  document.getElementById('saveBtn').textContent = 'Save Evaluation';
+  
+  document.querySelectorAll('#pdfRoot input[type=text], #pdfRoot textarea').forEach(el => {
+    el.value = '';
+    autoResizeTextarea(el);
+  });
+  
+  setDateToday();
+  swResetTimer();
+  savedSwTimes = [];
+  renderSavedStopwatches();
+  updateSetupTitleDisplay();
+  resetScores();
+  updateQuickCaptureCounts();
+  checkLandingDraft();
+}
+
+function updateMenuCounts() {
+  const allCount = savedHistory.length;
+  const counts = { 'SWO': 0, 'SVO': 0, 'VO': 0, 'Manual Check-in': 0, 'ZIP': 0, 'Highway': 0, 'Instructor': 0 };
+
+  savedHistory.forEach(item => {
+    if (counts.hasOwnProperty(item.trainingType)) {
+      counts[item.trainingType]++;
+    }
+  });
+
+  document.querySelectorAll('.cnt-all').forEach(el => el.textContent = `(${allCount})`);
+  document.querySelectorAll('.cnt-swo').forEach(el => el.textContent = `(${counts['SWO']})`);
+  document.querySelectorAll('.cnt-svo').forEach(el => el.textContent = `(${counts['SVO']})`);
+  document.querySelectorAll('.cnt-vo').forEach(el => el.textContent = `(${counts['VO']})`);
+  document.querySelectorAll('.cnt-manual-check-in').forEach(el => el.textContent = `(${counts['Manual Check-in']})`);
+  document.querySelectorAll('.cnt-zip').forEach(el => el.textContent = `(${counts['ZIP']})`);
+  document.querySelectorAll('.cnt-highway').forEach(el => el.textContent = `(${counts['Highway']})`);
+  document.querySelectorAll('.cnt-instructor').forEach(el => el.textContent = `(${counts['Instructor']})`);
+}
+
+function triggerAutoSave() {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => {
+    performAutoSave();
+  }, 400);
+}
+
+function performAutoSave() {
+  if (document.getElementById('mainFormWrap').style.display === 'none') return;
+
+  const categoryNotes = activeCategories.map((_, i) => {
+    const el = document.getElementById(`catNotes-${i}`);
+    return el ? el.value : '';
+  });
+
+  const draftData = {
+    trainingType: document.getElementById('activeTrainingType').value,
+    dateVal: document.getElementById('dateField').value,
+    traineeName: document.getElementById('traineeNameField').value,
+    missionVal: missionField.value,
+    customMissionVal: customMissionField.value,
+    ticketVal: document.getElementById('ticketField') ? document.getElementById('ticketField').value : '',
+    routesVal: document.getElementById('routesField').value,
+    savedSwTimes: [...savedSwTimes],
+    scores: [...scores],
+    categoryNotes,
+    qcAddNotes: document.getElementById('qcAddNotes').value,
+    qcOddCallouts: document.getElementById('qcOddCallouts') ? document.getElementById('qcOddCallouts').value : '',
+    qcDisengagements: document.getElementById('qcDisengagements') ? document.getElementById('qcDisengagements').value : '',
+    qcDataCol: document.getElementById('qcDataCol') ? document.getElementById('qcDataCol').value : '',
+    strengthsDetailed: document.getElementById('strengthsDetailedField') ? document.getElementById('strengthsDetailedField').value : '',
+    improvementsDetailed: document.getElementById('improvementsDetailedField') ? document.getElementById('improvementsDetailedField').value : '',
+    strengths: document.getElementById('strengthsField').value,
+    improvements: document.getElementById('improvementsField').value,
+    timestamp: Date.now()
+  };
+
+  safeSetStorage('zoox_eval_draft', JSON.stringify(draftData));
+  checkLandingDraft();
+
+  const badge = document.getElementById('autoSaveBadge');
+  if (badge) {
+    badge.classList.add('show');
+    setTimeout(() => badge.classList.remove('show'), 2000);
+  }
+}
+
+async function loadAutoSaveDraft() {
+  const rawDraft = safeGetStorage('zoox_eval_draft');
+  if (!rawDraft) return;
+
+  try {
+    const draft = JSON.parse(rawDraft);
+    if (!draft || !draft.timestamp) return;
+
+    if (draft.trainingType) {
+      document.getElementById('activeTrainingType').value = draft.trainingType;
+      previousTrainingType = draft.trainingType;
+      onTrainingTypeChange();
+    }
+    document.getElementById('dateField').value = draft.dateVal || '';
+    document.getElementById('traineeNameField').value = draft.traineeName || '';
+    
+    if (draft.missionVal) {
+      missionField.value = draft.missionVal;
+      toggleCustomMission();
+      if (draft.missionVal === 'Other' && draft.customMissionVal) {
+        customMissionField.value = draft.customMissionVal;
+      }
+    }
+    
+    if (document.getElementById('ticketField')) document.getElementById('ticketField').value = draft.ticketVal || '';
+    document.getElementById('routesField').value = draft.routesVal || '';
+    
+    if (Array.isArray(draft.savedSwTimes)) {
+      savedSwTimes = [...draft.savedSwTimes];
+    } else if (draft.savedSwTime) {
+      savedSwTimes = [draft.savedSwTime];
+    }
+    renderSavedStopwatches();
+
+    if (Array.isArray(draft.scores)) {
+      draft.scores.forEach((s, idx) => {
+        scores[idx] = s;
+        const scoreRow = document.getElementById(`scores-${idx}`);
+        if (scoreRow) {
+          scoreRow.querySelectorAll('.score-btn').forEach(b => b.classList.remove('selected'));
+          if (s !== null && s !== undefined) {
+            const targetBtn = Array.from(scoreRow.querySelectorAll('.score-btn')).find(b => b.textContent == s);
+            if (targetBtn) {
+              targetBtn.classList.add('selected');
+              const tallySpan = document.querySelector(`#tally-${idx} span`);
+              if (tallySpan) tallySpan.textContent = s;
+            }
+          }
+        }
+      });
+      updateTotal();
+    }
+
+    if (Array.isArray(draft.categoryNotes)) {
+      draft.categoryNotes.forEach((note, idx) => {
+        const el = document.getElementById(`catNotes-${idx}`);
+        if (el) {
+          el.value = note || '';
+          autoResizeTextarea(el);
+        }
+      });
+    }
+
+    if (draft.qcAddNotes) { document.getElementById('qcAddNotes').value = draft.qcAddNotes; autoResizeTextarea(document.getElementById('qcAddNotes')); }
+    if (draft.qcOddCallouts && document.getElementById('qcOddCallouts')) { document.getElementById('qcOddCallouts').value = draft.qcOddCallouts; autoResizeTextarea(document.getElementById('qcOddCallouts')); }
+    if (draft.qcDisengagements && document.getElementById('qcDisengagements')) { document.getElementById('qcDisengagements').value = draft.qcDisengagements; autoResizeTextarea(document.getElementById('qcDisengagements')); }
+    if (draft.qcDataCol && document.getElementById('qcDataCol')) { document.getElementById('qcDataCol').value = draft.qcDataCol; autoResizeTextarea(document.getElementById('qcDataCol')); }
+    if (draft.strengthsDetailed && document.getElementById('strengthsDetailedField')) { document.getElementById('strengthsDetailedField').value = draft.strengthsDetailed; autoResizeTextarea(document.getElementById('strengthsDetailedField')); }
+    if (draft.improvementsDetailed && document.getElementById('improvementsDetailedField')) { document.getElementById('improvementsDetailedField').value = draft.improvementsDetailed; autoResizeTextarea(document.getElementById('improvementsDetailedField')); }
+    if (draft.strengths) { document.getElementById('strengthsField').value = draft.strengths; autoResizeTextarea(document.getElementById('strengthsField')); }
+    if (draft.improvements) { document.getElementById('improvementsField').value = draft.improvements; autoResizeTextarea(document.getElementById('improvementsField')); }
+    updateQuickCaptureCounts();
+  } catch(e) {}
+}
+
+function checkLandingDraft() {
+  const rawDraft = safeGetStorage('zoox_eval_draft');
+  const resumeBtn = document.getElementById('resumeDraftBtn');
+  if (!resumeBtn) return;
+  if (rawDraft) {
+    try {
+      const draft = JSON.parse(rawDraft);
+      if (draft && draft.timestamp) {
+        const trainee = draft.traineeName ? ` (${draft.traineeName})` : '';
+        const type = draft.trainingType ? `[${draft.trainingType}]` : '';
+        resumeBtn.textContent = `Resume Draft ${type}${trainee}`;
+        resumeBtn.style.display = 'block';
+        return;
+      }
+    } catch(e) {}
+  }
+  resumeBtn.style.display = 'none';
+}
+
+function resumeDraftFromLanding() {
+  const rawDraft = safeGetStorage('zoox_eval_draft');
+  if (!rawDraft) return;
+  document.getElementById('landingView').style.display = 'none';
+  document.getElementById('historyView').style.display = 'none';
+  document.getElementById('mainFormWrap').style.display = 'block';
+  loadAutoSaveDraft();
+}
+
+function clearAutoSaveDraft() {
+  try { localStorage.removeItem('zoox_eval_draft'); } catch(e) {}
+  checkLandingDraft();
+}
+
 let swSeconds = 0;
 let swInterval = null;
 let swRunning = false;
-let savedSwTimeValue = "";
 const swDisplay = document.getElementById('swDisplay');
 const swStartBtn = document.getElementById('swStartBtn');
 
@@ -937,7 +1978,7 @@ function swFormat(totalSeconds){
   const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
   const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
   const s = String(totalSeconds % 60).padStart(2, '0');
-  return `${h}:${m}:${s}`;
+  return `${h}:${m}:${s} Mins`;
 }
 
 function swToggle(){
@@ -959,94 +2000,108 @@ function swToggle(){
   }
 }
 
-function updateSetupTitle(timeStr) {
+function updateSetupTitleDisplay() {
   const cat0Title = document.getElementById('catTitle-0');
-  if (cat0Title) {
-    if (timeStr) {
-      cat0Title.textContent = `Setup / ${timeStr}`;
-    } else {
-      cat0Title.textContent = `Setup`;
-    }
+  if (!cat0Title) return;
+  const type = document.getElementById('activeTrainingType').value;
+  const useStandardText = (type === 'Instructor' || type === 'Manual Check-in' || type === 'ZIP' || type === 'Highway');
+  if (useStandardText) return;
+  if (savedSwTimes.length > 0) {
+    const timesStr = savedSwTimes.join(', ');
+    cat0Title.textContent = `Setup/${timesStr}`;
+  } else {
+    cat0Title.textContent = `Setup`;
   }
 }
 
-function swClear(){
-  clearInterval(swInterval);
-  swRunning = false;
+function swResetTimer(){
+  if (swRunning) {
+    clearInterval(swInterval);
+    swRunning = false;
+    swStartBtn.textContent = 'Start';
+    swStartBtn.classList.remove('stop');
+    swStartBtn.classList.add('start');
+  }
   swSeconds = 0;
-  savedSwTimeValue = "";
-  swDisplay.textContent = swFormat(0);
-  swStartBtn.textContent = 'Start';
-  swStartBtn.classList.remove('stop');
-  swStartBtn.classList.add('start');
-  document.getElementById('swSavedRow').style.display = 'none';
-  document.getElementById('swSavedTime').textContent = "00:00:00";
-  updateSetupTitle("");
+  swDisplay.textContent = "00:00:00 Mins";
 }
 
 function swSave(){
+  let timeToSave = "";
   if (swSeconds === 0) {
-    const manualTime = prompt("Stopwatch was not started. Enter Setup Time (e.g., 00:12:30 or 15 mins):", savedSwTimeValue || "00:15:00");
+    const manualTime = prompt("Stopwatch was not started. Enter Setup Time (e.g. 00:15:00):", "00:15:00");
     if (manualTime !== null && manualTime.trim() !== "") {
-      savedSwTimeValue = manualTime.trim();
-    } else {
-      return;
-    }
+      let cleaned = manualTime.trim();
+      if (!cleaned.endsWith("Mins")) {
+        cleaned += " Mins";
+      }
+      timeToSave = cleaned;
+    } else return;
   } else {
-    savedSwTimeValue = swFormat(swSeconds);
+    timeToSave = swFormat(swSeconds);
   }
-  document.getElementById('swSavedTime').textContent = savedSwTimeValue;
-  document.getElementById('swSavedRow').style.display = 'flex';
-  updateSetupTitle(savedSwTimeValue);
+  
+  if (timeToSave) {
+    savedSwTimes.push(timeToSave);
+    renderSavedStopwatches();
+    updateSetupTitleDisplay();
+    triggerAutoSave();
+    
+    if (swRunning) {
+      clearInterval(swInterval);
+      swRunning = false;
+      swStartBtn.textContent = 'Start';
+      swStartBtn.classList.remove('stop');
+      swStartBtn.classList.add('start');
+    }
+  }
 }
 
-// Default the date field to today
+function swDeleteSavedTime(index){
+  savedSwTimes.splice(index, 1);
+  renderSavedStopwatches();
+  updateSetupTitleDisplay();
+  triggerAutoSave();
+}
+
+function renderSavedStopwatches() {
+  const container = document.getElementById('swSavedContainer');
+  if (!container) return;
+  
+  if (savedSwTimes.length === 0) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+
+  container.style.display = 'flex';
+  container.innerHTML = '';
+
+  savedSwTimes.forEach((timeStr, idx) => {
+    const row = document.createElement('div');
+    row.className = 'sw-saved-row';
+    row.innerHTML = `
+      <div class="sw-saved-info">
+        <span style="color:var(--muted)">Setup / Event #${idx + 1}:</span>
+        <span class="sw-saved-time">${timeStr}</span>
+      </div>
+      <button type="button" class="sw-delete-btn" onclick="swDeleteSavedTime(${idx})">Delete</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
 const dateField = document.getElementById('dateField');
 function setDateToday(){
   const today = new Date();
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
-  dateField.value = `${yyyy}-${mm}-${dd}`;
+  if (dateField) dateField.value = `${yyyy}-${mm}-${dd}`;
 }
-setDateToday();
 
-// ---- Current Mission dropdown ----
 const missionField = document.getElementById('missionField');
 const customMissionField = document.getElementById('customMissionField');
-const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
-const weekTypes = ['SWO Training', 'SVO Training', 'VO Training'];
-
-const missionOptions = [];
-weekTypes.forEach(type => {
-  [1, 2].forEach(week => {
-    days.forEach(day => {
-      missionOptions.push(`${type} Week ${week} - ${day}`);
-    });
-  });
-  if (type === 'SWO Training') {
-    missionOptions.push('SWO Training Mock CR', 'SWO Training CR', 'SWO Training Refresher');
-  } else if (type === 'SVO Training') {
-    missionOptions.push('SVO Training Mock CR', 'SVO Training CR', 'SVO Training Refresher');
-  } else if (type === 'VO Training') {
-    missionOptions.push('VO Training Manual Check-in');
-  }
-});
-missionOptions.push('Other');
-
-const placeholderOpt = document.createElement('option');
-placeholderOpt.textContent = 'Select mission...';
-placeholderOpt.value = '';
-placeholderOpt.disabled = true;
-placeholderOpt.selected = true;
-missionField.appendChild(placeholderOpt);
-
-missionOptions.forEach(opt => {
-  const el = document.createElement('option');
-  el.value = opt;
-  el.textContent = opt;
-  missionField.appendChild(el);
-});
 
 function toggleCustomMission() {
   if (missionField.value === 'Other') {
@@ -1056,122 +2111,220 @@ function toggleCustomMission() {
     customMissionField.style.display = 'none';
     customMissionField.value = '';
   }
+  triggerAutoSave();
 }
 
 function getMissionValue() {
-  if (missionField.value === 'Other') {
-    const customVal = customMissionField.value.trim();
+  if (missionField && missionField.value === 'Other') {
+    const customVal = customMissionField ? customMissionField.value.trim() : '';
     return customVal ? customVal : 'Other';
   }
-  const missionSel = missionField.options[missionField.selectedIndex];
-  return (missionSel && missionSel.value) ? missionSel.textContent : 'No mission selected';
+  if (missionField && missionField.selectedIndex >= 0) {
+    const missionSel = missionField.options[missionField.selectedIndex];
+    return (missionSel && missionSel.value) ? missionSel.textContent : 'No mission selected';
+  }
+  return 'No mission selected';
 }
 
-// ---- High-Grade Executive Google Docs Formatter ----
-function buildGoogleDocsContent() {
-  const traineeName = document.getElementById('traineeNameField').value.trim() || 'Unnamed Trainee';
-  const missionVal = getMissionValue();
-  const dateVal = dateField.value || 'No date';
-  const ticketVal = document.getElementById('ticketField').value || '—';
-  const routesVal = document.getElementById('routesField').value || '—';
-  const total = document.getElementById('totalScore').textContent;
-  const trainingType = document.getElementById('activeTrainingType').value;
-  const maxTotal = activeCategories.length * maxPerCategory;
-
-  // Build clean Google Docs HTML table layout
-  let html = `<div style="font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #1a1f27; line-height: 1.5; max-width: 680px;">`;
+function buildPdfReportContent(entry = null) {
+  const traineeName = entry ? (entry.traineeName || 'Unnamed Trainee') : (document.getElementById('traineeNameField').value.trim() || 'Unnamed Trainee');
+  const missionVal = entry ? (entry.missionVal || 'Mission') : getMissionValue();
+  const dateVal = entry ? (entry.dateVal || 'No date') : (dateField.value || 'No date');
+  const ticketVal = entry ? (entry.ticketVal || '—') : (document.getElementById('ticketField') ? document.getElementById('ticketField').value : '—');
+  const routesVal = entry ? (entry.routesVal || '—') : (document.getElementById('routesField').value || '—');
+  const trainingType = entry ? (entry.trainingType || 'SWO') : document.getElementById('activeTrainingType').value;
+  const useStandardText = (trainingType === 'Instructor' || trainingType === 'Manual Check-in' || trainingType === 'ZIP' || trainingType === 'Highway');
+  const isInstructor = (trainingType === 'Instructor');
   
-  // Header Banner Table
-  html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; background-color: #008080; border-radius: 6px;">`;
-  html += `<tr><td style="padding: 16px 20px;">`;
-  html += `<div style="font-size: 10pt; font-weight: bold; color: #e0f2f1; text-transform: uppercase; letter-spacing: 1px;">Zoox // L3 Field Eval (${trainingType})</div>`;
-  html += `<div style="font-size: 18pt; font-weight: bold; color: #ffffff; margin-top: 2px;">Training Mission Grading Form</div>`;
-  html += `</td></tr></table>`;
+  const evalCats = getCategoriesForType(trainingType);
+  const maxTotal = evalCats.length * maxPerCategory;
+  const total = entry ? entry.total : document.getElementById('totalScore').textContent;
+  const scoresArr = entry ? entry.scores : scores;
+  const swTimesArr = entry ? (entry.savedSwTimes || []) : savedSwTimes;
 
-  // Session Meta Summary Table
-  html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; border: 1px solid #d0d7de; background-color: #f6f8fa;">`;
-  html += `<tr>`;
-  html += `<td style="padding: 12px 14px; border: 1px solid #d0d7de; width: 50%;"><b>Trainee Name:</b> ${traineeName}</td>`;
-  html += `<td style="padding: 12px 14px; border: 1px solid #d0d7de; width: 50%;"><b>Mission:</b> ${missionVal}</td>`;
-  html += `</tr><tr>`;
-  html += `<td style="padding: 12px 14px; border: 1px solid #d0d7de;"><b>Evaluation Date:</b> ${dateVal}</td>`;
-  html += `<td style="padding: 12px 14px; border: 1px solid #d0d7de;"><b>Ticket #:</b> ${ticketVal}</td>`;
-  html += `</tr><tr>`;
-  html += `<td style="padding: 12px 14px; border: 1px solid #d0d7de;"><b>Routes:</b> ${routesVal}</td>`;
-  html += `<td style="padding: 12px 14px; border: 1px solid #d0d7de; background-color: #e6f2f2; font-size: 12pt;"><b>Total Score:</b> <span style="color: #008080; font-weight: bold;">${total} / ${maxTotal}</span></td>`;
-  html += `</tr></table>`;
+  const qcAddNotesVal = entry ? (entry.qcAddNotes || '') : document.getElementById('qcAddNotes').value;
+  const qcOddCalloutsVal = entry ? (entry.qcOddCallouts || '') : (document.getElementById('qcOddCallouts') ? document.getElementById('qcOddCallouts').value : '');
+  const qcDisengagementsVal = entry ? (entry.qcDisengagements || '') : (document.getElementById('qcDisengagements') ? document.getElementById('qcDisengagements').value : '');
+  const qcDataColVal = entry ? (entry.qcDataCol || '') : (document.getElementById('qcDataCol') ? document.getElementById('qcDataCol').value : '');
 
-  // Category Scores Table
-  html += `<h2 style="font-size: 14pt; color: #008080; border-bottom: 2px solid #008080; padding-bottom: 4px; margin-top: 28px; margin-bottom: 14px;">Category Performance & Observations</h2>`;
-  
-  if (activeCategories.length === 0) {
-    html += `<div style="font-size: 10pt; color: #666; font-style: italic; margin-bottom: 24px;">No evaluation categories configured for ${trainingType}.</div>`;
-  } else {
-    html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; border: 1px solid #d0d7de;">`;
-    html += `<tr style="background-color: #008080; color: #ffffff; text-align: left;">`;
-    html += `<th style="padding: 10px 12px; border: 1px solid #008080; width: 65%;">Evaluation Category</th>`;
-    html += `<th style="padding: 10px 12px; border: 1px solid #008080; width: 35%; text-align: right;">Score</th>`;
-    html += `</tr>`;
+  const strengthsDetailedVal = entry ? (entry.strengthsDetailed || '') : (document.getElementById('strengthsDetailedField') ? document.getElementById('strengthsDetailedField').value : '');
+  const improvementsDetailedVal = entry ? (entry.improvementsDetailed || '') : (document.getElementById('improvementsDetailedField') ? document.getElementById('improvementsDetailedField').value : '');
+  const strengthsVal = entry ? (entry.strengths || '') : document.getElementById('strengthsField').value;
+  const improvementsVal = entry ? (entry.improvements || '') : document.getElementById('improvementsField').value;
 
-    activeCategories.forEach(([title, desc], i) => {
-      const scoreVal = scores[i] !== null ? scores[i] : 0;
-      const catNotesEl = document.getElementById(`catNotes-${i}`);
-      const notesText = catNotesEl ? catNotesEl.value.trim() : '';
-
-      let displayTitle = title;
-      if (i === 0 && savedSwTimeValue) {
-        displayTitle = `Setup / ${savedSwTimeValue}`;
-      }
-
-      const rowBg = i % 2 === 0 ? '#ffffff' : '#f9fbe7';
-
-      html += `<tr style="background-color: ${rowBg};">`;
-      html += `<td style="padding: 10px 12px; border: 1px solid #d0d7de; vertical-align: top;">`;
-      html += `<strong style="font-size: 11pt; color: #1a1f27;">${i+1}. ${displayTitle}</strong>`;
-      if (notesText) {
-        html += `<div style="font-size: 10pt; color: #333333; margin-top: 6px; padding: 6px 10px; background-color: #ffffff; border-left: 3px solid #008080; white-space: pre-wrap;"><b>Notes:</b> ${notesText}</div>`;
-      } else {
-        html += `<div style="font-size: 9.5pt; color: #888888; font-style: italic; margin-top: 4px;">No category observations recorded.</div>`;
-      }
-      html += `</td>`;
-      html += `<td style="padding: 10px 12px; border: 1px solid #d0d7de; text-align: right; vertical-align: top; font-weight: bold; font-size: 12pt; color: #008080;">${scoreVal} / 5</td>`;
-      html += `</tr>`;
-    });
-
-    html += `</table>`;
+  let headerRightHtml = `
+      <td style="text-align: right; vertical-align: middle;">
+        <div style="font-size: 10pt; color: #90cdf4; text-transform: uppercase;">Total Score</div>
+        <div style="font-size: 22pt; font-weight: bold; color: #ffffff;">${total} / ${maxTotal}</div>
+      </td>`;
+  if (useStandardText) {
+    headerRightHtml = ``;
   }
 
-  const getTaVal = (id) => {
-    const el = document.getElementById(id);
-    return (el && el.value.trim()) ? el.value.trim() : '—';
-  };
+  let metaTableHtml = `
+  <table class="meta-table">
+    <tr>
+      <td><b>Trainee Name:</b> ${traineeName}</td>
+      <td><b>Mission:</b> ${missionVal}</td>
+    </tr>
+    <tr>
+      <td><b>Date:</b> ${dateVal}</td>
+      <td><b>Ticket #:</b> ${ticketVal || '—'}</td>
+    </tr>
+    <tr>
+      <td><b>Routes:</b> ${routesVal || '—'}</td>
+      <td><b>Setup Times:</b> ${swTimesArr.length > 0 ? swTimesArr.join(', ') : 'None recorded'}</td>
+    </tr>
+  </table>`;
 
-  // Quick Capture Observations Section
-  html += `<h2 style="font-size: 14pt; color: #008080; border-bottom: 2px solid #008080; padding-bottom: 4px; margin-top: 28px; margin-bottom: 14px;">Quick-Capture Observations</h2>`;
+  if (useStandardText) {
+    metaTableHtml = `
+    <table class="meta-table">
+      <tr>
+        <td><b>Trainee Name:</b> ${traineeName}</td>
+        <td><b>Mission:</b> ${missionVal}</td>
+      </tr>
+      <tr>
+        <td><b>Date:</b> ${dateVal}</td>
+        <td><b>Routes:</b> ${routesVal || '—'}</td>
+      </tr>
+    </table>`;
+  }
+
+  let html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>${traineeName} - ${missionVal} Report</title>
+<style>
+  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #111111; line-height: 1.5; margin: 0; padding: 24px; background: #ffffff; }
+  .report-container { max-width: 800px; margin: 0 auto; }
+  .header-table { width: 100%; border-collapse: collapse; background: #1a365d; color: #ffffff; border-radius: 6px; overflow: hidden; margin-bottom: 20px; }
+  .header-table td { padding: 20px 24px; }
+  .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; border: 1px solid #cbd5e0; background: #f8fafc; border-radius: 6px; }
+  .meta-table td { padding: 10px 16px; border-bottom: 1px solid #cbd5e0; font-size: 11pt; width: 50%; vertical-align: top; }
+  .meta-table tr:last-child td { border-bottom: none; }
+  h2 { font-size: 14pt; color: #1a365d; border-bottom: 2px solid #1a365d; padding-bottom: 6px; margin-top: 28px; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .cat-box { margin-bottom: 14px; border: 1px solid #cbd5e0; border-radius: 6px; background: #ffffff; padding: 14px 16px; page-break-inside: avoid; }
+  .cat-header-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+  .cat-title { font-weight: bold; color: #1a365d; font-size: 11pt; }
+  .cat-score { font-weight: bold; color: #2b6cb0; font-size: 12pt; text-align: right; }
+  .cat-note { font-size: 10pt; color: #2d3748; padding: 8px 10px; background: #f8fafc; border-left: 3px solid #3182ce; border-radius: 2px; white-space: pre-wrap; margin-top: 6px; }
+  .feedback-box { margin-bottom: 16px; background: #f8fafc; border: 1px solid #cbd5e0; border-radius: 6px; padding: 14px 16px; page-break-inside: avoid; }
+  .feedback-title { font-weight: bold; color: #2d3748; margin-bottom: 6px; font-size: 10.5pt; }
+  .feedback-content { color: #4a5568; white-space: pre-wrap; font-size: 10pt; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="report-container">
+
+  <table class="header-table">
+    <tr>
+      <td>
+        <div style="font-size: 9pt; font-weight: bold; color: #90cdf4; text-transform: uppercase; letter-spacing: 1px;">Zoox // L3 Field Eval (${trainingType})</div>
+        <div style="font-size: 20pt; font-weight: bold; color: #ffffff; margin-top: 4px;">Training Mission Grading Report</div>
+      </td>
+      ${headerRightHtml}
+    </tr>
+  </table>
+
+  ${metaTableHtml}
+
+  <h2>Category Performance & Observations</h2>`;
+
+  evalCats.forEach(([title], i) => {
+    const scoreVal = (scoresArr && scoresArr[i] !== null && scoresArr[i] !== undefined) ? scoresArr[i] : (useStandardText ? 'Not Selected' : 0);
+    const notesArr = entry ? entry.categoryNotes : null;
+    const catNotesEl = notesArr ? notesArr[i] : (document.getElementById(`catNotes-${i}`) ? document.getElementById(`catNotes-${i}`).value : '');
+    
+    let displayTitle = title;
+    if (!useStandardText && i === 0 && swTimesArr.length > 0) {
+      displayTitle = `Setup / ${swTimesArr.join(', ')}`;
+    }
+
+    html += `
+    <div class="cat-box">
+      <table class="cat-header-table">
+        <tr>
+          <td class="cat-title">Category ${i+1}: ${displayTitle}</td>
+          <td class="cat-score">${useStandardText ? 'Rating: ' : ''}${scoreVal} ${useStandardText ? '' : '/ 5'}</td>
+        </tr>
+      </table>`;
+    
+    if (catNotesEl && catNotesEl.trim() !== '') {
+      html += `<div class="cat-note"><b>Notes:</b><br>${catNotesEl.trim()}</div>`;
+    } else {
+      html += `<div style="font-size: 9.5pt; color: #a0aec0; font-style: italic; margin-top: 4px;">No notes provided for this category.</div>`;
+    }
+    
+    html += `</div>`;
+  });
+
+  html += `<h2>Quick-Capture Observations</h2>`;
   
-  html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; border: 1px solid #d0d7de;">`;
-  html += `<tr style="background-color: #f6f8fa;">`;
-  html += `<td style="padding: 12px; border: 1px solid #d0d7de; width: 50%; vertical-align: top;"><b>Additional Notes:</b><br><span style="color: #222222; white-space: pre-wrap;">${getTaVal('qcAddNotes')}</span></td>`;
-  html += `<td style="padding: 12px; border: 1px solid #d0d7de; width: 50%; vertical-align: top;"><b>ODD Callouts:</b><br><span style="color: #222222; white-space: pre-wrap;">${getTaVal('qcOddCallouts')}</span></td>`;
-  html += `</tr><tr style="background-color: #f6f8fa;">`;
-  html += `<td style="padding: 12px; border: 1px solid #d0d7de; vertical-align: top;"><b>Disengagements:</b><br><span style="color: #222222; white-space: pre-wrap;">${getTaVal('qcDisengagements')}</span></td>`;
-  html += `<td style="padding: 12px; border: 1px solid #d0d7de; vertical-align: top;"><b>Data Collection:</b><br><span style="color: #222222; white-space: pre-wrap;">${getTaVal('qcDataCol')}</span></td>`;
-  html += `</tr></table>`;
+  const qcSections = isInstructor ? [
+    ["Additional Notes", qcAddNotesVal]
+  ] : [
+    ["Additional Notes", qcAddNotesVal],
+    ["ODD Callouts", qcOddCalloutsVal],
+    ["Disengagements", qcDisengagementsVal],
+    ["Data Collection", qcDataColVal]
+  ];
 
-  // Strengths & Improvements Section
-  html += `<h2 style="font-size: 14pt; color: #008080; border-bottom: 2px solid #008080; padding-bottom: 4px; margin-top: 28px; margin-bottom: 14px;">Trainee Strengths & Improvements</h2>`;
-  
-  html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; border: 1px solid #d0d7de;">`;
-  html += `<tr><td style="padding: 12px; border: 1px solid #d0d7de; background-color: #f0fdf4;">`;
-  html += `<strong style="color: #15803d; font-size: 11pt;">Key Strengths:</strong><br><div style="color: #1a1f27; margin-top: 4px; white-space: pre-wrap;">${getTaVal('strengthsField')}</div>`;
-  html += `</td></tr>`;
-  html += `<tr><td style="padding: 12px; border: 1px solid #d0d7de; background-color: #fef2f2;">`;
-  html += `<strong style="color: #b91c1c; font-size: 11pt;">Areas for Improvement:</strong><br><div style="color: #1a1f27; margin-top: 4px; white-space: pre-wrap;">${getTaVal('improvementsField')}</div>`;
-  html += `</td></tr>`;
-  html += `</table>`;
+  qcSections.forEach(([qTitle, qVal]) => {
+    html += `
+    <div class="feedback-box">
+      <div class="feedback-title">${qTitle}</div>
+      <div class="feedback-content">${qVal && qVal.trim() !== '' ? qVal.trim() : 'No entries recorded.'}</div>
+    </div>`;
+  });
 
-  html += `</div>`;
+  html += `<h2>Evaluator Feedback & Evaluations</h2>`;
+
+  const feedbackSections = isInstructor ? [
+    ["Strengths", strengthsVal],
+    ["Improvements", improvementsVal]
+  ] : [
+    ["Strengths and Improvements (Detailed) - What the trainee does well or is getting better at", strengthsDetailedVal],
+    ["Strengths and Improvements (Detailed) - Areas the trainee can improve on", improvementsDetailedVal],
+    ["Strengths", strengthsVal],
+    ["Improvements", improvementsVal]
+  ];
+
+  feedbackSections.forEach(([fTitle, fVal]) => {
+    html += `
+    <div class="feedback-box">
+      <div class="feedback-title">${fTitle}</div>
+      <div class="feedback-content">${fVal && fVal.trim() !== '' ? fVal.trim() : 'No entry recorded.'}</div>
+    </div>`;
+  });
+
+  html += `
+</div>
+</body>
+</html>`;
+
   return html;
+}
+
+function openPdfFromHistory(id) {
+  const entry = savedHistory.find(e => e.id === id);
+  if (!entry) return;
+  const reportHtml = buildPdfReportContent(entry);
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.write(reportHtml);
+    win.document.close();
+    setTimeout(() => {
+      win.focus();
+      win.print();
+    }, 400);
+  }
+}
+
+function buildGoogleDocsContent() {
+  const fullHtml = buildPdfReportContent();
+  return fullHtml;
 }
 
 async function copyForGoogleDocs() {
@@ -1181,34 +2334,22 @@ async function copyForGoogleDocs() {
 
   try {
     const formattedHtml = buildGoogleDocsContent();
-    
-    // Create hidden rich-text container to trigger native DOM copy buffer
     const container = document.createElement('div');
     container.innerHTML = formattedHtml;
     container.style.position = 'fixed';
     container.style.left = '-9999px';
-    container.style.top = '0';
     document.body.appendChild(container);
 
-    // Try standard Clipboard API first with rich HTML payload
     let copied = false;
     if (navigator.clipboard && window.ClipboardItem) {
       try {
         const blobHtml = new Blob([formattedHtml], { type: 'text/html' });
         const blobText = new Blob([container.innerText], { type: 'text/plain' });
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            'text/html': blobHtml,
-            'text/plain': blobText
-          })
-        ]);
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })]);
         copied = true;
-      } catch (e) {
-        console.warn('Clipboard API error, falling back to selection copy:', e);
-      }
+      } catch (e) {}
     }
 
-    // Fallback selection range copy
     if (!copied) {
       const range = document.createRange();
       range.selectNodeContents(container);
@@ -1220,141 +2361,208 @@ async function copyForGoogleDocs() {
     }
 
     document.body.removeChild(container);
-    alert("Formatted for Google Docs!\n\n1. Open your Google Doc\n2. Press Paste (Ctrl+V / Cmd+V) to insert formatted tables & scorecards.");
+    alert("Formatted cleanly for Google Docs!\n\nOpen your document and press Paste (Ctrl+V / Cmd+V).");
   } catch (err) {
-    console.error('Failed to copy formatted text:', err);
-    alert('Could not auto-copy formatted text. Please check browser permissions.');
+    alert('Could not auto-copy formatted text.');
   } finally {
     docsBtn.disabled = false;
     docsBtn.textContent = 'Copy for Google Docs';
   }
 }
 
-// ---- Persistent Session History ----
-let savedHistory = [];
-let historyIdCounter = 0;
-
-function loadHistoryFromStorage(){
+async function loadHistoryFromStorage(){
   try {
-    const data = localStorage.getItem('zoox_grading_history');
-    if (data) {
-      savedHistory = JSON.parse(data);
-      if (savedHistory.length > 0) {
-        historyIdCounter = Math.max(...savedHistory.map(item => item.id || 0));
-      }
+    const { data, error } = await supabaseClient
+      .from(TABLE_NAME)
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching history from Supabase:', error.message);
+      savedHistory = [];
+    } else {
+      savedHistory = (data || []).map(row => {
+        let parsedStrengths = row.strengths || '';
+        let parsedImprovements = row.improvements || '';
+        return {
+          id: row.id,
+          trainingType: row.training_type,
+          traineeName: row.trainee_name,
+          missionVal: row.mission_val,
+          dateVal: row.date_val,
+          ticketVal: row.ticket_val,
+          routesVal: row.routes_val,
+          total: row.total_score,
+          timeLabel: row.time_label,
+          savedSwTimes: row.saved_sw_times || [],
+          scores: row.scores || [],
+          categoryNotes: row.category_notes || [],
+          strengths: parsedStrengths,
+          improvements: parsedImprovements
+        };
+      });
     }
   } catch (e) {
-    console.error('Failed to load history from storage:', e);
+    console.error('Unexpected error loading history from Supabase:', e);
+    savedHistory = [];
   }
-  renderHistory();
+  renderHistorySections();
+  updateMenuCounts();
 }
 
-function saveHistoryToStorage(){
-  try {
-    localStorage.setItem('zoox_grading_history', JSON.stringify(savedHistory));
-  } catch (e) {
-    console.error('Failed to save history to storage:', e);
+function openHistoryView(moduleFilter = 'All') {
+  currentHistoryModuleFilter = moduleFilter;
+  
+  document.getElementById('landingView').style.display = 'none';
+  document.getElementById('mainFormWrap').style.display = 'none';
+  document.getElementById('historyView').style.display = 'block';
+
+  const titleEl = document.getElementById('historyPageTitle');
+  const subEl = document.getElementById('historyPageSubtitle');
+
+  if (moduleFilter === 'All') {
+    if (titleEl) titleEl.textContent = 'Zoox // Saved Records';
+    if (subEl) subEl.textContent = 'All Saved Reports & PDFs';
+  } else {
+    if (titleEl) titleEl.textContent = `Zoox // ${moduleFilter} Saved Records`;
+    if (subEl) subEl.textContent = `${moduleFilter} Saved Reports & PDFs`;
   }
+
+  renderHistorySections();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function renderHistory(){
-  const list = document.getElementById('historyList');
-  const empty = document.getElementById('historyEmpty');
-  list.innerHTML = '';
-  if (savedHistory.length === 0) {
-    list.appendChild(empty);
+function closeHistoryView() {
+  document.getElementById('historyView').style.display = 'none';
+  document.getElementById('mainFormWrap').style.display = 'block';
+}
+
+function renderHistorySections() {
+  const container = document.getElementById('historySectionsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  let filteredHistory = savedHistory;
+  if (currentHistoryModuleFilter && currentHistoryModuleFilter !== 'All') {
+    filteredHistory = savedHistory.filter(item => item.trainingType === currentHistoryModuleFilter);
+  }
+
+  if (filteredHistory.length === 0) {
+    const emptyMsg = currentHistoryModuleFilter === 'All' 
+      ? 'No saved evaluation reports found.' 
+      : `No saved evaluation reports found for <strong>${currentHistoryModuleFilter}</strong>.`;
+    container.innerHTML = `<div class="history-empty" style="padding:24px 0;">${emptyMsg}</div>`;
     return;
   }
-  savedHistory.forEach(entry => {
-    const item = document.createElement('div');
-    item.className = 'history-item';
-    const evalCats = getCategoriesForType(entry.trainingType);
-    const maxTotal = evalCats.length * maxPerCategory;
-    item.innerHTML = `
-      <div class="history-meta">
-        <div class="h-title">${entry.traineeName} — ${entry.missionVal} (${entry.trainingType || 'SWO'})</div>
-        <div class="h-sub">${entry.dateVal} · Score ${entry.total}/${maxTotal} · saved ${entry.timeLabel}</div>
+
+  const traineeGroups = {};
+  filteredHistory.forEach(entry => {
+    const name = (entry.traineeName && entry.traineeName.trim()) ? entry.traineeName.trim() : 'Unnamed Trainee';
+    if (!traineeGroups[name]) traineeGroups[name] = [];
+    traineeGroups[name].push(entry);
+  });
+
+  Object.keys(traineeGroups).forEach(traineeName => {
+    const entries = traineeGroups[traineeName];
+
+    const sectionCard = document.createElement('div');
+    sectionCard.style.cssText = 'background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:20px;';
+
+    const nameHeader = document.createElement('div');
+    nameHeader.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--line); padding-bottom:10px; flex-wrap:wrap; gap:8px;';
+    nameHeader.innerHTML = `
+      <div>
+        <div style="font-family:var(--mono); font-size:10px; color:var(--cyan); letter-spacing:.12em; text-transform:uppercase;">Trainee Section</div>
+        <h3 style="margin:2px 0 0; font-size:18px; color:var(--text); font-weight:700;">${traineeName}</h3>
       </div>
-      <div class="history-actions">
-        <button class="history-delete" onclick="deleteHistoryItem(${entry.id})">Delete</button>
-        <button class="history-edit" onclick="editHistoryItem(${entry.id})">Edit</button>
-        <button class="history-link" onclick="openPdfFromHistory(${entry.id})">Open PDF</button>
-      </div>
+      <div style="font-family:var(--mono); font-size:12px; color:var(--muted);">${entries.length} ${currentHistoryModuleFilter === 'All' ? 'Total' : currentHistoryModuleFilter} Report${entries.length > 1 ? 's' : ''}</div>
     `;
-    list.appendChild(item);
+    sectionCard.appendChild(nameHeader);
+
+    const listDiv = document.createElement('div');
+    entries.forEach(entry => {
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      const evalCats = getCategoriesForType(entry.trainingType);
+      const maxTotal = evalCats.length * maxPerCategory;
+      const isStandardTextType = (entry.trainingType === 'Instructor' || entry.trainingType === 'Manual Check-in' || entry.trainingType === 'ZIP' || entry.trainingType === 'Highway');
+      const scoreSub = isStandardTextType ? `${entry.trainingType} Evaluation` : `Score ${entry.total}/${maxTotal}`;
+      item.innerHTML = `
+        <div class="history-meta">
+          <div class="h-title"><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; margin-right:6px;">[${entry.trainingType || 'SWO'}]</span>${entry.missionVal}</div>
+          <div class="h-sub">${entry.dateVal} · ${scoreSub} · Saved at ${entry.timeLabel}</div>
+        </div>
+        <div class="history-actions">
+          <button class="history-delete" onclick="deleteHistoryItem('${entry.id}')">Delete</button>
+          <button class="history-edit" onclick="editHistoryItem('${entry.id}')">Edit</button>
+          <button class="history-link" onclick="openPdfFromHistory('${entry.id}')">Open PDF / Print</button>
+        </div>`;
+      listDiv.appendChild(item);
+    });
+
+    sectionCard.appendChild(listDiv);
+    container.appendChild(sectionCard);
   });
 }
 
-function deleteHistoryItem(id){
-  const entry = savedHistory.find(e => e.id === id);
+async function deleteHistoryItem(id){
+  const entry = savedHistory.find(e => e.id == id);
   if (!entry) return;
-  if (!confirm(`Delete the saved record for ${entry.traineeName} — ${entry.missionVal}?`)) return;
-  savedHistory = savedHistory.filter(e => e.id !== id);
-  saveHistoryToStorage();
-  renderHistory();
-  if (currentEditingId === id) {
-    currentEditingId = null;
-    const saveBtn = document.getElementById('saveBtn');
-    if (saveBtn) saveBtn.textContent = 'Save Evaluation';
+  const confirmed = await showCustomConfirm(`Delete record for ${entry.traineeName}?`);
+  if (!confirmed) return;
+  
+  try {
+    const { error } = await supabaseClient
+      .from(TABLE_NAME)
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    savedHistory = savedHistory.filter(e => e.id != id);
+    renderHistorySections();
+    updateMenuCounts();
+
+    if (currentEditingId == id) {
+      currentEditingId = null;
+      const saveBtn = document.getElementById('saveBtn');
+      if (saveBtn) saveBtn.textContent = 'Save Evaluation';
+    }
+  } catch (err) {
+    alert('Could not delete item from Supabase: ' + err.message);
   }
 }
 
 function loadSnapshotIntoForm(snapshot) {
   if (!snapshot) return;
-
-  // Set training type
   const tType = snapshot.trainingType || 'SWO';
   document.getElementById('activeTrainingType').value = tType;
+  previousTrainingType = tType;
   onTrainingTypeChange();
 
-  // Basic info
   document.getElementById('traineeNameField').value = snapshot.traineeName || '';
   document.getElementById('dateField').value = snapshot.dateVal || '';
-  document.getElementById('ticketField').value = snapshot.ticketVal || '';
+  if (document.getElementById('ticketField')) document.getElementById('ticketField').value = snapshot.ticketVal || '';
   document.getElementById('routesField').value = snapshot.routesVal || '';
 
-  // Stopwatch state restore
-  if (snapshot.savedSwTime) {
-    savedSwTimeValue = snapshot.savedSwTime;
-    document.getElementById('swSavedTime').textContent = savedSwTimeValue;
-    document.getElementById('swSavedRow').style.display = 'flex';
-    updateSetupTitle(savedSwTimeValue);
-  } else {
-    savedSwTimeValue = "";
-    document.getElementById('swSavedRow').style.display = 'none';
-    document.getElementById('swSavedTime').textContent = "00:00:00";
-    updateSetupTitle("");
+  if (snapshot.missionVal && missionField) {
+    missionField.value = snapshot.missionVal;
+    toggleCustomMission();
+    if (snapshot.missionVal === 'Other' && snapshot.customMissionVal) {
+      customMissionField.value = snapshot.customMissionVal;
+    }
   }
 
-  // Mission dropdown & custom input restore
-  if (snapshot.rawMissionSelect === 'Other' || snapshot.customMissionVal) {
-    missionField.value = 'Other';
-    customMissionField.style.display = 'block';
-    customMissionField.value = snapshot.customMissionVal || snapshot.missionVal || '';
-  } else if (snapshot.missionVal) {
-    let found = false;
-    for (let i = 0; i < missionField.options.length; i++) {
-      if (missionField.options[i].textContent === snapshot.missionVal || missionField.options[i].value === snapshot.missionVal) {
-        missionField.selectedIndex = i;
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      missionField.value = 'Other';
-      customMissionField.style.display = 'block';
-      customMissionField.value = snapshot.missionVal;
-    } else {
-      customMissionField.style.display = 'none';
-      customMissionField.value = '';
-    }
+  if (Array.isArray(snapshot.savedSwTimes)) {
+    savedSwTimes = [...snapshot.savedSwTimes];
+  } else if (snapshot.savedSwTime) {
+    savedSwTimes = [snapshot.savedSwTime];
   } else {
-    missionField.selectedIndex = 0;
-    customMissionField.style.display = 'none';
-    customMissionField.value = '';
+    savedSwTimes = [];
   }
+  renderSavedStopwatches();
+  updateSetupTitleDisplay();
 
-  // Scores
   if (Array.isArray(snapshot.scores)) {
     snapshot.scores.forEach((s, idx) => {
       scores[idx] = s;
@@ -1363,528 +2571,227 @@ function loadSnapshotIntoForm(snapshot) {
         scoreRow.querySelectorAll('.score-btn').forEach(b => b.classList.remove('selected'));
         if (s !== null && s !== undefined) {
           const targetBtn = Array.from(scoreRow.querySelectorAll('.score-btn')).find(b => b.textContent == s);
-          if (targetBtn) targetBtn.classList.add('selected');
+          if (targetBtn) {
+            targetBtn.classList.add('selected');
+            const tallySpan = document.querySelector(`#tally-${idx} span`);
+            if (tallySpan) tallySpan.textContent = s;
+          }
         }
-      }
-      const catCard = document.querySelectorAll('.cat')[idx];
-      if (catCard) {
-        const tallySpan = catCard.querySelector(`#tally-${idx} span`);
-        if (tallySpan) tallySpan.textContent = s !== null ? s : 0;
       }
     });
     updateTotal();
   }
 
-  // Category Notes
   if (Array.isArray(snapshot.categoryNotes)) {
     snapshot.categoryNotes.forEach((note, idx) => {
       const el = document.getElementById(`catNotes-${idx}`);
-      if (el) el.value = note || '';
+      if (el) {
+        el.value = note || '';
+        autoResizeTextarea(el);
+      }
     });
   }
 
-  // Quick Capture & Feedback
-  if (snapshot.quickCapture) {
-    document.getElementById('qcAddNotes').value = snapshot.quickCapture.addNotes || '';
-    document.getElementById('qcOddCallouts').value = snapshot.quickCapture.oddCallouts || '';
-    document.getElementById('qcDisengagements').value = snapshot.quickCapture.disengagements || '';
-    document.getElementById('qcDataCol').value = snapshot.quickCapture.dataCol || '';
-  } else {
-    document.getElementById('qcAddNotes').value = '';
-    document.getElementById('qcOddCallouts').value = '';
-    document.getElementById('qcDisengagements').value = '';
-    document.getElementById('qcDataCol').value = '';
-  }
-  document.getElementById('strengthsField').value = snapshot.strengths || '';
-  document.getElementById('improvementsField').value = snapshot.improvements || '';
+  if (snapshot.strengthsDetailed && document.getElementById('strengthsDetailedField')) { document.getElementById('strengthsDetailedField').value = snapshot.strengthsDetailed; autoResizeTextarea(document.getElementById('strengthsDetailedField')); }
+  if (snapshot.improvementsDetailed && document.getElementById('improvementsDetailedField')) { document.getElementById('improvementsDetailedField').value = snapshot.improvementsDetailed; autoResizeTextarea(document.getElementById('improvementsDetailedField')); }
+  if (snapshot.strengths) { document.getElementById('strengthsField').value = snapshot.strengths; autoResizeTextarea(document.getElementById('strengthsField')); }
+  if (snapshot.improvements) { document.getElementById('improvementsField').value = snapshot.improvements; autoResizeTextarea(document.getElementById('improvementsField')); }
+  updateQuickCaptureCounts();
 }
 
 function editHistoryItem(id) {
-  const entry = savedHistory.find(e => e.id === id);
+  const entry = savedHistory.find(e => e.id == id);
   if (!entry) return;
 
   currentEditingId = id;
   document.getElementById('landingView').style.display = 'none';
+  document.getElementById('historyView').style.display = 'none';
   document.getElementById('mainFormWrap').style.display = 'block';
-
   loadSnapshotIntoForm(entry);
-
   const saveBtn = document.getElementById('saveBtn');
   if (saveBtn) saveBtn.textContent = 'Update Evaluation';
-
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function openPdfFromHistory(id) {
-  const entry = savedHistory.find(e => e.id === id);
-  if (!entry) return;
+async function saveDocumentInternal() {
+  try {
+    const traineeName = (document.getElementById('traineeNameField') ? document.getElementById('traineeNameField').value : '').trim() || 'Unnamed Trainee';
+    const missionVal = typeof getMissionValue === 'function' ? getMissionValue() : 'No mission selected';
+    const dateVal = (document.getElementById('dateField') ? document.getElementById('dateField').value : '') || 'no date';
+    const ticketVal = document.getElementById('ticketField') ? document.getElementById('ticketField').value : '';
+    const routesVal = document.getElementById('routesField') ? document.getElementById('routesField').value : '';
+    const total = (document.getElementById('totalScore') ? document.getElementById('totalScore').textContent : '0') || '0';
+    const trainingType = (document.getElementById('activeTrainingType') ? document.getElementById('activeTrainingType').value : 'SWO') || 'SWO';
+    const useStandardText = (trainingType === 'Instructor' || trainingType === 'Manual Check-in' || trainingType === 'ZIP' || trainingType === 'Highway');
+    
+    const now = new Date();
+    const timeLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  const title = `${entry.traineeName || 'Trainee'} - ${entry.missionVal || 'Mission'} - ${entry.dateVal || 'Date'}`;
-  const evalCats = getCategoriesForType(entry.trainingType);
-  const maxTotal = evalCats.length * maxPerCategory;
-
-  // Build category HTML
-  let catHtml = '';
-  if (evalCats.length === 0) {
-    catHtml = `<div style="font-size:13px; color:#666; font-style:italic; margin-top:10px;">No category evaluation scores defined for ${entry.trainingType || 'this training type'}.</div>`;
-  } else {
-    evalCats.forEach(([cTitle, cDesc], i) => {
-      const scoreVal = (entry.scores && entry.scores[i] !== null && entry.scores[i] !== undefined) ? entry.scores[i] : 0;
-      const noteVal = (entry.categoryNotes && entry.categoryNotes[i]) ? entry.categoryNotes[i] : '';
-      
-      let displayTitle = cTitle;
-      if (i === 0 && entry.savedSwTime) {
-        displayTitle = `Setup / ${entry.savedSwTime}`;
-      }
-
-      catHtml += `
-        <div style="margin-top:10px; padding:12px 14px; border:1px solid #d0d0d0; border-radius:8px; page-break-inside:avoid; background:#fafafa;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <strong style="font-size:15px; color:#008080;">${displayTitle}</strong>
-            <span style="font-family:monospace; font-weight:bold; font-size:14px; color:#008080;">Score: ${scoreVal} / 5</span>
-          </div>
-          <div style="font-size:13px; color:#333; white-space:pre-wrap; margin-top:6px;"><b>Notes:</b> ${noteVal ? noteVal : '<span style="color:#888; font-style:italic;">No notes provided.</span>'}</div>
-        </div>
-      `;
+    const categoryNotes = activeCategories.map((_, i) => {
+      const el = document.getElementById(`catNotes-${i}`);
+      return el ? (el.value || '') : '';
     });
-  }
 
-  const qc = entry.quickCapture || {};
+    const strengthsDetailedVal = document.getElementById('strengthsDetailedField') ? document.getElementById('strengthsDetailedField').value : '';
+    const improvementsDetailedVal = document.getElementById('improvementsDetailedField') ? document.getElementById('improvementsDetailedField').value : '';
+    const qcAddNotesVal = document.getElementById('qcAddNotes') ? document.getElementById('qcAddNotes').value : '';
+    const qcOddCalloutsVal = document.getElementById('qcOddCallouts') ? document.getElementById('qcOddCallouts').value : '';
+    const qcDisengagementsVal = document.getElementById('qcDisengagements') ? document.getElementById('qcDisengagements').value : '';
+    const qcDataColVal = document.getElementById('qcDataCol') ? document.getElementById('qcDataCol').value : '';
+    const strengthsVal = document.getElementById('strengthsField') ? document.getElementById('strengthsField').value : '';
+    const improvementsVal = document.getElementById('improvementsField') ? document.getElementById('improvementsField').value : '';
 
-  const reportHtml = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>${title}</title>
-  <style>
-    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #ffffff; color: #111111; margin: 0; padding: 24px; line-height: 1.5; }
-    .wrap { max-width: 820px; margin: 0 auto; }
-    .header { border-bottom: 2px solid #008080; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
-    .header h1 { margin: 0; font-size: 22px; color: #008080; }
-    .header .score { font-size: 24px; font-weight: bold; color: #008080; font-family: monospace; }
-    .grid-meta { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; background: #f4f6f8; padding: 14px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
-    .section-label { font-size: 12px; font-weight: bold; letter-spacing: 0.1em; text-transform: uppercase; color: #008080; margin-top: 22px; margin-bottom: 8px; border-bottom: 1px solid #e0e0e0; padding-bottom: 4px; }
-    .box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px 12px; font-size: 13px; min-height: 40px; white-space: pre-wrap; color:#222; }
-    .print-bar { position: sticky; top: 0; background: #ffffff; padding: 10px 0; border-bottom: 1px solid #eee; margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center; }
-    .print-btn { background: #008080; color: white; border: none; padding: 9px 20px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 13.5px; }
-    .print-btn:hover { opacity: 0.9; }
-    @media print {
-      .print-bar { display: none !important; }
-      body { padding: 0 !important; }
-    }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="print-bar">
-      <div style="font-weight:bold; color:#555; font-size:13px;">PDF Preview — ${title}</div>
-      <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
-    </div>
-    <div class="header">
-      <div>
-        <h1>Zoox // L3 Field Eval</h1>
-        <div style="font-size:14px; color:#555; margin-top:4px;">Training Mission Grading Form (${entry.trainingType || 'SWO'})</div>
-      </div>
-      <div class="score">${entry.total || 0} / ${maxTotal}</div>
-    </div>
+    const combinedStrengths = [
+      strengthsDetailedVal ? `--- Detailed Strengths ---\n${strengthsDetailedVal}` : '',
+      qcAddNotesVal ? `--- Additional Notes ---\n${qcAddNotesVal}` : '',
+      qcOddCalloutsVal ? `--- ODD Callouts ---\n${qcOddCalloutsVal}` : '',
+      qcDataColVal ? `--- Data Collection ---\n${qcDataColVal}` : '',
+      strengthsVal ? `--- General Strengths ---\n${strengthsVal}` : ''
+    ].filter(Boolean).join('\n\n');
 
-    <div class="grid-meta">
-      <div><b>Type:</b><br>${entry.trainingType || 'SWO'}</div>
-      <div><b>Trainee:</b><br>${entry.traineeName || '—'}</div>
-      <div><b>Mission:</b><br>${entry.missionVal || '—'}</div>
-      <div><b>Date:</b><br>${entry.dateVal || '—'}</div>
-      <div><b>Ticket #:</b><br>${entry.ticketVal || '—'}</div>
-      <div><b>Routes:</b><br>${entry.routesVal || '—'}</div>
-    </div>
+    const combinedImprovements = [
+      improvementsDetailedVal ? `--- Detailed Improvements ---\n${improvementsDetailedVal}` : '',
+      qcDisengagementsVal ? `--- Disengagements ---\n${qcDisengagementsVal}` : '',
+      improvementsVal ? `--- General Improvements ---\n${improvementsVal}` : ''
+    ].filter(Boolean).join('\n\n');
 
-    <div class="section-label">Category Scores</div>
-    ${catHtml}
-
-    <div class="section-label">Quick-Capture Observations</div>
-    <div class="grid-2">
-      <div><label style="font-size:11px; font-weight:bold; color:#555;">Additional Notes</label><div class="box">${qc.addNotes || '—'}</div></div>
-      <div><label style="font-size:11px; font-weight:bold; color:#555;">ODD Callouts</label><div class="box">${qc.oddCallouts || '—'}</div></div>
-      <div><label style="font-size:11px; font-weight:bold; color:#555;">Disengagements</label><div class="box">${qc.disengagements || '—'}</div></div>
-      <div><label style="font-size:11px; font-weight:bold; color:#555;">Data Collection</label><div class="box">${qc.dataCol || '—'}</div></div>
-    </div>
-
-    <div class="section-label">Strengths and Improvements</div>
-    <div style="margin-top:8px;">
-      <label style="font-size:11px; font-weight:bold; color:#555;">Strengths</label>
-      <div class="box">${entry.strengths || '—'}</div>
-    </div>
-    <div style="margin-top:12px;">
-      <label style="font-size:11px; font-weight:bold; color:#555;">Improvements</label>
-      <div class="box">${entry.improvements || '—'}</div>
-    </div>
-  </div>
-  <script>
-    window.onload = function() {
-      setTimeout(function() {
-        window.print();
-      }, 300);
+    const payload = {
+      training_type: String(trainingType),
+      trainee_name: String(traineeName),
+      mission_val: String(missionVal || 'No mission selected'),
+      date_val: String(dateVal),
+      ticket_val: String(ticketVal || ''),
+      routes_val: String(routesVal || ''),
+      total_score: String(total),
+      time_label: String(timeLabel),
+      saved_sw_times: [...savedSwTimes],
+      scores: Array.isArray(scores) ? scores.map(s => (s === null || s === undefined ? (useStandardText ? 'Not Selected' : 0) : s)) : [],
+      category_notes: categoryNotes,
+      strengths: combinedStrengths,
+      improvements: combinedImprovements
     };
-  <\/script>
-</body>
-</html>`;
 
-  const win = window.open('', '_blank');
-  if (win) {
-    win.document.write(reportHtml);
-    win.document.close();
-  } else {
-    alert('Please allow popups in your browser to open the PDF in a new tab.');
+    if (currentEditingId) {
+      const { error } = await supabaseClient
+        .from(TABLE_NAME)
+        .update(payload)
+        .eq('id', currentEditingId);
+
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseClient
+        .from(TABLE_NAME)
+        .insert([payload]);
+
+      if (error) throw error;
+    }
+
+    await loadHistoryFromStorage();
+    clearAutoSaveDraft();
+    currentEditingId = null;
+    updateMenuCounts();
+  } catch (err) {
+    console.error("Save Evaluation Error:", err);
+    throw err;
   }
 }
 
-// ---- Native Save Evaluation to History ----
-function saveDocument(){
-  const traineeName = document.getElementById('traineeNameField').value.trim() || 'Unnamed Trainee';
-  const missionVal = getMissionValue();
-  const dateVal = dateField.value || 'no date';
-  const ticketVal = document.getElementById('ticketField').value || '';
-  const routesVal = document.getElementById('routesField').value || '';
-  const total = document.getElementById('totalScore').textContent;
-  const trainingType = document.getElementById('activeTrainingType').value;
-  const now = new Date();
-  const timeLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  // Gather full evaluation snapshot
-  const categoryNotes = activeCategories.map((_, i) => {
-    const el = document.getElementById(`catNotes-${i}`);
-    return el ? el.value : '';
-  });
-
-  const snapshot = {
-    id: currentEditingId ? currentEditingId : ++historyIdCounter,
-    trainingType,
-    traineeName,
-    missionVal,
-    rawMissionSelect: missionField.value,
-    customMissionVal: customMissionField.value,
-    dateVal,
-    ticketVal,
-    routesVal,
-    total,
-    timeLabel,
-    savedSwTime: savedSwTimeValue,
-    scores: [...scores],
-    categoryNotes,
-    quickCapture: {
-      addNotes: document.getElementById('qcAddNotes').value,
-      oddCallouts: document.getElementById('qcOddCallouts').value,
-      disengagements: document.getElementById('qcDisengagements').value,
-      dataCol: document.getElementById('qcDataCol').value
-    },
-    strengths: document.getElementById('strengthsField').value,
-    improvements: document.getElementById('improvementsField').value
-  };
-
-  if (currentEditingId) {
-    const idx = savedHistory.findIndex(e => e.id === currentEditingId);
-    if (idx !== -1) {
-      savedHistory[idx] = snapshot;
-    } else {
-      savedHistory.unshift(snapshot);
-    }
-  } else {
-    savedHistory.unshift(snapshot);
+async function saveDocument(){
+  const saveBtn = document.getElementById('saveBtn');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving to Cloud...';
   }
 
-  saveHistoryToStorage();
-  renderHistory();
-
-  // Reset currentEditingId after saving
-  currentEditingId = null;
-  const saveBtn = document.getElementById('saveBtn');
-  if (saveBtn) saveBtn.textContent = 'Save Evaluation';
-
-  alert("Evaluation saved to history!\n\nYou can click 'Open PDF' next to the entry in Saved History whenever you're ready to print or view the PDF.");
+  try {
+    await saveDocumentInternal();
+    if (saveBtn) {
+      saveBtn.textContent = 'Save Evaluation';
+    }
+    alert("Evaluation saved successfully to Supabase Cloud!");
+  } catch (err) {
+    alert("Could not save evaluation to cloud service: " + (err.message || err));
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Evaluation';
+    }
+  }
 }
 
 function createNewForm(){
-  if(!confirm('Start a new document or change training type? Any unsaved changes on this form will be lost.')) return;
-
   currentEditingId = null;
-  const saveBtn = document.getElementById('saveBtn');
-  if (saveBtn) saveBtn.textContent = 'Save Evaluation';
-
-  document.querySelectorAll('#pdfRoot input[type=text], #pdfRoot textarea').forEach(el => el.value = '');
-  missionField.selectedIndex = 0;
-  customMissionField.style.display = 'none';
-  customMissionField.value = '';
+  clearAutoSaveDraft();
+  document.getElementById('saveBtn').textContent = 'Save Evaluation';
+  document.querySelectorAll('#pdfRoot input[type=text], #pdfRoot textarea').forEach(el => {
+    el.value = '';
+    autoResizeTextarea(el);
+  });
   setDateToday();
-  swClear();
-
-  // Return to landing view
+  swResetTimer();
+  savedSwTimes = [];
+  renderSavedStopwatches();
+  updateSetupTitleDisplay();
   document.getElementById('mainFormWrap').style.display = 'none';
+  document.getElementById('historyView').style.display = 'none';
   document.getElementById('landingView').style.display = 'block';
-  document.getElementById('initialTrainingSelect').selectedIndex = 0;
+  updateQuickCaptureCounts();
+  checkLandingDraft();
 }
 
-// Load history from browser storage on page ready
+function openProfileModal() {
+  document.getElementById('profileModal').style.display = 'flex';
+}
 
-// ==========================================
-// AUTHENTICATION SYSTEM (Local + Optional Firebase)
-// ==========================================
+function closeProfileModal() {
+  document.getElementById('profileModal').style.display = 'none';
+}
 
-let activeLoginMethod = 'password';
-let currentUser = null;
+async function handleDeleteAccount() {
+  const confirmed = await showCustomConfirm("Permanently delete ALL saved evaluation records from Supabase Cloud?");
+  if (!confirmed) return;
 
-// Optional Firebase Configuration Setup
-// Paste your Firebase Config here if enabling real cloud Firebase auth:
-const firebaseConfig = {
-  // apiKey: "YOUR_API_KEY",
-  // authDomain: "YOUR_PROJECT.firebaseapp.com",
-  // projectId: "YOUR_PROJECT_ID",
-  // storageBucket: "YOUR_PROJECT.appspot.com",
-  // messagingSenderId: "SENDER_ID",
-  // appId: "APP_ID"
-};
-
-let isFirebaseConfigured = false;
-if (typeof firebase !== 'undefined' && firebaseConfig && firebaseConfig.apiKey) {
   try {
-    firebase.initializeApp(firebaseConfig);
-    isFirebaseConfigured = true;
-    document.getElementById('firebaseStatusText').textContent = 'Auth Mode: Firebase Cloud Auth Active';
-  } catch (e) {
-    console.warn('Firebase init error:', e);
+    const { error } = await supabaseClient
+      .from(TABLE_NAME)
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Deletes all rows
+
+    if (error) throw error;
+
+    savedHistory = [];
+    renderHistorySections();
+    updateMenuCounts();
+    closeProfileModal();
+    alert("All evaluation records deleted from cloud storage.");
+  } catch (err) {
+    alert("Could not delete records: " + err.message);
   }
 }
 
-function switchAuthTab(tab) {
-  const tabSignIn = document.getElementById('tabSignIn');
-  const tabSignUp = document.getElementById('tabSignUp');
-  const signInForm = document.getElementById('signInForm');
-  const signUpForm = document.getElementById('signUpForm');
-  const heading = document.getElementById('authHeading');
+document.addEventListener('DOMContentLoaded', () => {
+  setDateToday();
+  populateMissionDropdown();
+  loadHistoryFromStorage();
+  attachAutoNumberListeners();
+  updateQuickCaptureCounts();
+  checkLandingDraft();
 
-  if (tab === 'signin') {
-    tabSignIn.classList.add('active');
-    tabSignUp.classList.remove('active');
-    signInForm.style.display = 'block';
-    signUpForm.style.display = 'none';
-    heading.textContent = 'Sign In';
-  } else {
-    tabSignUp.classList.add('active');
-    tabSignIn.classList.remove('active');
-    signUpForm.style.display = 'block';
-    signInForm.style.display = 'none';
-    heading.textContent = 'Create Account';
+  const mainForm = document.getElementById('mainFormWrap');
+  if (mainForm) {
+    mainForm.addEventListener('input', (e) => {
+      if (e.target.tagName === 'TEXTAREA') {
+        autoResizeTextarea(e.target);
+      }
+      triggerAutoSave();
+      updateQuickCaptureCounts();
+    });
+    mainForm.addEventListener('change', () => {
+      triggerAutoSave();
+      updateQuickCaptureCounts();
+    });
   }
-}
-
-function setLoginMethod(method) {
-  activeLoginMethod = method;
-  const btnPass = document.getElementById('btnMethodPassword');
-  const btnPin = document.getElementById('btnMethodPin');
-  const passGroup = document.getElementById('signinPasswordGroup');
-  const pinGroup = document.getElementById('signinPinGroup');
-
-  if (method === 'password') {
-    btnPass.classList.add('active');
-    btnPin.classList.remove('active');
-    passGroup.style.display = 'block';
-    pinGroup.style.display = 'none';
-    document.getElementById('signinPassword').required = true;
-    document.getElementById('signinPin').required = false;
-  } else {
-    btnPin.classList.add('active');
-    btnPass.classList.remove('active');
-    pinGroup.style.display = 'block';
-    passGroup.style.display = 'none';
-    document.getElementById('signinPin').required = true;
-    document.getElementById('signinPassword').required = false;
-  }
-}
-
-function getRegisteredUsers() {
-  try {
-    const data = localStorage.getItem('zoox_registered_users');
-    return data ? JSON.parse(data) : [];
-  } catch(e) {
-    return [];
-  }
-}
-
-function saveRegisteredUsers(users) {
-  localStorage.setItem('zoox_registered_users', JSON.stringify(users));
-}
-
-function setCurrentUser(user) {
-  currentUser = user;
-  sessionStorage.setItem('zoox_current_user', JSON.stringify(user));
-  updateUserDisplay();
-}
-
-function updateUserDisplay() {
-  const badge = document.getElementById('hudUserBadge');
-  if (currentUser) {
-    const fullName = `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.username;
-    if (badge) {
-      badge.style.display = 'flex';
-      badge.innerHTML = `<span>Proctor: <strong>${fullName}</strong></span> <button type="button" class="logout-btn" onclick="handleLogout()">Log Out</button>`;
-    }
-    // Auto-populate Trainee or Evaluator name reference if empty
-    const traineeField = document.getElementById('traineeNameField');
-    if (traineeField && !traineeField.value) {
-      // Keep trainee name empty for entering actual trainee, but store logged-in evaluator for exports
-    }
-  } else if (badge) {
-    badge.style.display = 'none';
-  }
-}
-
-function handleSignUp(e) {
-  e.preventDefault();
-  const firstName = document.getElementById('signupFirstName').value.trim();
-  const lastName = document.getElementById('signupLastName').value.trim();
-  const username = document.getElementById('signupUsername').value.trim().toLowerCase();
-  const email = document.getElementById('signupEmail').value.trim().toLowerCase();
-  const password = document.getElementById('signupPassword').value;
-  const pin = document.getElementById('signupPin').value.trim();
-  const errDiv = document.getElementById('signupError');
-
-  errDiv.style.display = 'none';
-
-  if (!firstName || !lastName || !username || !email || !password || !pin) {
-    errDiv.textContent = 'Please fill in all required sign-up fields.';
-    errDiv.style.display = 'block';
-    return;
-  }
-
-  const users = getRegisteredUsers();
-  if (users.some(u => u.username.toLowerCase() === username)) {
-    errDiv.textContent = 'Username already exists. Please choose another username or sign in.';
-    errDiv.style.display = 'block';
-    return;
-  }
-
-  const newUser = { firstName, lastName, username, email, password, pin, id: Date.now() };
-  users.push(newUser);
-  saveRegisteredUsers(users);
-
-  // Authenticate user
-  setCurrentUser(newUser);
-  proceedToApp();
-}
-
-function handleSignIn(e) {
-  e.preventDefault();
-  const username = document.getElementById('signinUsername').value.trim().toLowerCase();
-  const password = document.getElementById('signinPassword').value;
-  const pin = document.getElementById('signinPin').value.trim();
-  const errDiv = document.getElementById('signinError');
-
-  errDiv.style.display = 'none';
-
-  const users = getRegisteredUsers();
-  const foundUser = users.find(u => u.username.toLowerCase() === username);
-
-  if (!foundUser) {
-    errDiv.textContent = 'Username not found. Please check spelling or Sign Up first.';
-    errDiv.style.display = 'block';
-    return;
-  }
-
-  if (activeLoginMethod === 'password') {
-    if (foundUser.password !== password) {
-      errDiv.textContent = 'Incorrect password.';
-      errDiv.style.display = 'block';
-      return;
-    }
-  } else {
-    if (foundUser.pin !== pin) {
-      errDiv.textContent = 'Incorrect PIN.';
-      errDiv.style.display = 'block';
-      return;
-    }
-  }
-
-  setCurrentUser(foundUser);
-  proceedToApp();
-}
-
-function handleGoogleSignIn() {
-  if (isFirebaseConfigured && typeof firebase !== 'undefined') {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(provider)
-      .then((result) => {
-        const u = result.user;
-        const names = (u.displayName || 'Google User').split(' ');
-        const gUser = {
-          firstName: names[0] || 'Google',
-          lastName: names.slice(1).join(' ') || 'User',
-          username: u.email ? u.email.split('@')[0] : 'googleuser',
-          email: u.email || '',
-          id: u.uid
-        };
-        setCurrentUser(gUser);
-        proceedToApp();
-      })
-      .catch((error) => {
-        alert('Google Sign-In Error: ' + error.message);
-      });
-  } else {
-    // Quick Local Google Sign-In Simulation
-    const nameInput = prompt("Enter your Name or Google account name for evaluator login:", "Alain Dabady");
-    if (nameInput && nameInput.trim()) {
-      const parts = nameInput.trim().split(' ');
-      const gUser = {
-        firstName: parts[0] || 'Evaluator',
-        lastName: parts.slice(1).join(' ') || '',
-        username: (parts[0] || 'evaluator').toLowerCase(),
-        email: 'evaluator@zoox.com',
-        id: Date.now()
-      };
-      setCurrentUser(gUser);
-      proceedToApp();
-    }
-  }
-}
-
-function handleLogout() {
-  if (confirm("Log out of the Evaluator Portal?")) {
-    sessionStorage.removeItem('zoox_current_user');
-    currentUser = null;
-    updateUserDisplay();
-    document.getElementById('mainFormWrap').style.display = 'none';
-    document.getElementById('landingView').style.display = 'none';
-    document.getElementById('authView').style.display = 'block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-}
-
-function proceedToApp() {
-  document.getElementById('authView').style.display = 'none';
-  document.getElementById('landingView').style.display = 'block';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function checkInitialAuth() {
-  try {
-    const storedUser = sessionStorage.getItem('zoox_current_user');
-    if (storedUser) {
-      currentUser = JSON.parse(storedUser);
-      updateUserDisplay();
-      document.getElementById('authView').style.display = 'none';
-      document.getElementById('landingView').style.display = 'block';
-    } else {
-      document.getElementById('authView').style.display = 'block';
-      document.getElementById('landingView').style.display = 'none';
-    }
-  } catch(e) {
-    document.getElementById('authView').style.display = 'block';
-    document.getElementById('landingView').style.display = 'none';
-  }
-}
-
-// Check session auth on DOM ready
-document.addEventListener('DOMContentLoaded', checkInitialAuth);
-
-loadHistoryFromStorage();
+});
 </script>
 </body>
 </html>
