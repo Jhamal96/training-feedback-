@@ -504,22 +504,33 @@
     border-radius:8px; margin-top:8px; background:var(--panel);
     flex-wrap:wrap;
   }
-  .history-meta{ font-size:13px; }
+  .history-meta{ font-size:13px; flex: 1 1 200px; }
   .history-meta .h-title{ font-weight:600; }
   .history-meta .h-sub{ color:var(--muted); font-size:11px; font-family:var(--mono); margin-top:2px; }
+  
   .history-link{
     font-family:var(--sans); font-size:12px; font-weight:600;
     color:var(--cyan); text-decoration:none; border:1px solid var(--cyan);
     padding:6px 12px; border-radius:6px; background:none; cursor:pointer; min-height: 34px;
   }
   .history-link:hover{ background:var(--cyan); color:#0b1210; }
+  
+  .history-view-btn{
+    font-family:var(--sans); font-size:12px; font-weight:600;
+    color:var(--purple); text-decoration:none; border:1px solid var(--purple);
+    padding:6px 12px; border-radius:6px; background:none; cursor:pointer; min-height: 34px;
+  }
+  .history-view-btn:hover{ background:var(--purple); color:#ffffff; }
+
   .history-edit{
     font-family:var(--sans); font-size:12px; font-weight:600;
     color:var(--amber); text-decoration:none; border:1px solid var(--amber);
     padding:6px 12px; border-radius:6px; background:none; cursor:pointer; min-height: 34px;
   }
   .history-edit:hover{ background:var(--amber); color:#0b1210; }
+  
   .history-actions{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  
   .history-delete{
     font-family:var(--sans); font-size:12px; font-weight:600;
     color:var(--muted); background:none; text-decoration:none;
@@ -591,6 +602,18 @@
     padding: 24px 18px; max-width: 480px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     max-height: 90vh; overflow-y: auto;
   }
+  
+  /* Read-Only Viewer Modal Specific Styles */
+  .viewer-modal-card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 24px; max-width: 760px; width: 100%; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+    max-height: 90vh; display: flex; flex-direction: column;
+  }
+  .viewer-content-body {
+    overflow-y: auto; flex: 1; padding-right: 4px; margin-top: 12px; margin-bottom: 16px;
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 16px;
+  }
+
   .profile-field { margin-bottom: 12px; padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; }
   .danger-zone { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
   .btn-danger { background: var(--red); color: #ffffff; border: none; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; min-height: 38px; }
@@ -637,8 +660,11 @@
     .action-btn { width: 100%; text-align: center; justify-content: center; }
     .score-btn { font-size: 14px; height: 42px; }
     .landing-card { margin: 16px auto 0; padding: 20px 16px; }
-    .history-item { flex-direction: column; align-items: flex-start; }
-    .history-actions { width: 100%; justify-content: flex-end; margin-top: 6px; }
+    
+    .history-item { flex-direction: column; align-items: stretch; gap: 10px; }
+    .history-actions { width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .history-actions button { width: 100%; text-align: center; justify-content: center; }
+    
     .scroll-nav { bottom: 16px; right: 16px; }
     .stopwatch-top { flex-direction: column; align-items: flex-start; }
     .sw-controls { width: 100%; justify-content: space-between; }
@@ -670,6 +696,28 @@
       <div style="display: flex; gap: 12px; justify-content: center;">
         <button type="button" class="action-btn secondary" id="customConfirmNoBtn" style="flex: 1; min-height: 40px;">No</button>
         <button type="button" class="action-btn primary" id="customConfirmYesBtn" style="flex: 1; min-height: 40px;">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Read-Only View Modal for Saved Evaluations -->
+  <div id="viewReportModal" class="modal-overlay no-print" style="display:none;">
+    <div class="viewer-modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:12px;">
+        <div>
+          <div style="font-family:var(--mono); font-size:10px; color:var(--cyan); letter-spacing:.12em; text-transform:uppercase;">Read-Only View</div>
+          <h3 id="viewModalTitle" style="margin:2px 0 0; font-size:18px; color:var(--text); font-weight:700;">Evaluation Report</h3>
+        </div>
+        <button type="button" onclick="closeViewModal()" style="background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer; line-height:1;">&times;</button>
+      </div>
+      
+      <div class="viewer-content-body" id="viewModalContentContainer">
+        <!-- Injected report summary HTML -->
+      </div>
+
+      <div style="display:flex; gap:12px; justify-content:flex-end; border-top:1px solid var(--line); padding-top:12px;">
+        <button type="button" class="action-btn secondary" onclick="closeViewModal()" style="padding:8px 18px; font-size:13px;">Close</button>
+        <button type="button" class="action-btn primary" id="viewModalPrintBtn" style="padding:8px 18px; font-size:13px;">Print / Open PDF</button>
       </div>
     </div>
   </div>
@@ -1677,7 +1725,6 @@ function confirmStartTraining() {
     return;
   }
   
-  // Clear any existing draft and reset fields for a completely fresh evaluation
   clearAutoSaveDraft();
   currentEditingId = null;
   document.getElementById('saveBtn').textContent = 'Save Evaluation';
@@ -2162,31 +2209,31 @@ function buildPdfReportContent(entry = null) {
   }
 
   let metaTableHtml = `
-  <table class="meta-table">
+  <table class="meta-table" style="width: 100%; border-collapse: collapse; margin-bottom: 24px; border: 1px solid #cbd5e0; background: #f8fafc; border-radius: 6px;">
     <tr>
-      <td><b>Trainee Name:</b> ${traineeName}</td>
-      <td><b>Mission:</b> ${missionVal}</td>
+      <td style="padding: 10px 16px; border-bottom: 1px solid #cbd5e0; font-size: 11pt; width: 50%; vertical-align: top;"><b>Trainee Name:</b> ${traineeName}</td>
+      <td style="padding: 10px 16px; border-bottom: 1px solid #cbd5e0; font-size: 11pt; width: 50%; vertical-align: top;"><b>Mission:</b> ${missionVal}</td>
     </tr>
     <tr>
-      <td><b>Date:</b> ${dateVal}</td>
-      <td><b>Ticket #:</b> ${ticketVal || '—'}</td>
+      <td style="padding: 10px 16px; border-bottom: 1px solid #cbd5e0; font-size: 11pt; width: 50%; vertical-align: top;"><b>Date:</b> ${dateVal}</td>
+      <td style="padding: 10px 16px; border-bottom: 1px solid #cbd5e0; font-size: 11pt; width: 50%; vertical-align: top;"><b>Ticket #:</b> ${ticketVal || '—'}</td>
     </tr>
     <tr>
-      <td><b>Routes:</b> ${routesVal || '—'}</td>
-      <td><b>Setup Times:</b> ${swTimesArr.length > 0 ? swTimesArr.join(', ') : 'None recorded'}</td>
+      <td style="padding: 10px 16px; font-size: 11pt; width: 50%; vertical-align: top;"><b>Routes:</b> ${routesVal || '—'}</td>
+      <td style="padding: 10px 16px; font-size: 11pt; width: 50%; vertical-align: top;"><b>Setup Times:</b> ${swTimesArr.length > 0 ? swTimesArr.join(', ') : 'None recorded'}</td>
     </tr>
   </table>`;
 
   if (useStandardText) {
     metaTableHtml = `
-    <table class="meta-table">
+    <table class="meta-table" style="width: 100%; border-collapse: collapse; margin-bottom: 24px; border: 1px solid #cbd5e0; background: #f8fafc; border-radius: 6px;">
       <tr>
-        <td><b>Trainee Name:</b> ${traineeName}</td>
-        <td><b>Mission:</b> ${missionVal}</td>
+        <td style="padding: 10px 16px; border-bottom: 1px solid #cbd5e0; font-size: 11pt; width: 50%; vertical-align: top;"><b>Trainee Name:</b> ${traineeName}</td>
+        <td style="padding: 10px 16px; border-bottom: 1px solid #cbd5e0; font-size: 11pt; width: 50%; vertical-align: top;"><b>Mission:</b> ${missionVal}</td>
       </tr>
       <tr>
-        <td><b>Date:</b> ${dateVal}</td>
-        <td><b>Routes:</b> ${routesVal || '—'}</td>
+        <td style="padding: 10px 16px; font-size: 11pt; width: 50%; vertical-align: top;"><b>Date:</b> ${dateVal}</td>
+        <td style="padding: 10px 16px; font-size: 11pt; width: 50%; vertical-align: top;"><b>Routes:</b> ${routesVal || '—'}</td>
       </tr>
     </table>`;
   }
@@ -2201,9 +2248,6 @@ function buildPdfReportContent(entry = null) {
   .report-container { max-width: 800px; margin: 0 auto; }
   .header-table { width: 100%; border-collapse: collapse; background: #1a365d; color: #ffffff; border-radius: 6px; overflow: hidden; margin-bottom: 20px; }
   .header-table td { padding: 20px 24px; }
-  .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; border: 1px solid #cbd5e0; background: #f8fafc; border-radius: 6px; }
-  .meta-table td { padding: 10px 16px; border-bottom: 1px solid #cbd5e0; font-size: 11pt; width: 50%; vertical-align: top; }
-  .meta-table tr:last-child td { border-bottom: none; }
   h2 { font-size: 14pt; color: #1a365d; border-bottom: 2px solid #1a365d; padding-bottom: 6px; margin-top: 28px; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
   .cat-box { margin-bottom: 14px; border: 1px solid #cbd5e0; border-radius: 6px; background: #ffffff; padding: 14px 16px; page-break-inside: avoid; }
   .cat-header-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
@@ -2311,15 +2355,66 @@ function openPdfFromHistory(id) {
   const entry = savedHistory.find(e => e.id === id);
   if (!entry) return;
   const reportHtml = buildPdfReportContent(entry);
+  
   const win = window.open('', '_blank');
-  if (win) {
-    win.document.write(reportHtml);
-    win.document.close();
-    setTimeout(() => {
-      win.focus();
-      win.print();
-    }, 400);
+  if (!win) {
+    alert("Popup blocked! Please allow popups for this site to view/print your report.");
+    return;
   }
+  
+  win.document.open();
+  win.document.write(reportHtml);
+  win.document.close();
+  
+  setTimeout(() => {
+    win.focus();
+    win.print();
+  }, 400);
+}
+
+function openViewReportModal(id) {
+  const entry = savedHistory.find(e => e.id === id);
+  if (!entry) return;
+  
+  const reportHtml = buildPdfReportContent(entry);
+  document.getElementById('viewModalTitle').textContent = `${entry.traineeName || 'Trainee'} - ${entry.missionVal || 'Report'}`;
+  
+  const container = document.getElementById('viewModalContentContainer');
+  
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(reportHtml, 'text/html');
+  const bodyContent = doc.body.innerHTML;
+  
+  container.innerHTML = `
+    <div style="background: #ffffff; color: #111111; padding: 16px; border-radius: 6px;">
+      ${bodyContent}
+    </div>
+  `;
+  
+  const printBtn = document.getElementById('viewModalPrintBtn');
+  const newPrintBtn = printBtn.cloneNode(true);
+  printBtn.parentNode.replaceChild(newPrintBtn, printBtn);
+  
+  newPrintBtn.addEventListener('click', () => {
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.open();
+      win.document.write(reportHtml);
+      win.document.close();
+      setTimeout(() => {
+        win.focus();
+        win.print();
+      }, 400);
+    } else {
+      alert("Popup blocked! Please allow popups to print.");
+    }
+  });
+
+  document.getElementById('viewReportModal').style.display = 'flex';
+}
+
+function closeViewModal() {
+  document.getElementById('viewReportModal').style.display = 'none';
 }
 
 function buildGoogleDocsContent() {
@@ -2494,6 +2589,7 @@ function renderHistorySections() {
         </div>
         <div class="history-actions">
           <button class="history-delete" onclick="deleteHistoryItem('${entry.id}')">Delete</button>
+          <button class="history-view-btn" onclick="openViewReportModal('${entry.id}')">View</button>
           <button class="history-edit" onclick="editHistoryItem('${entry.id}')">Edit</button>
           <button class="history-link" onclick="openPdfFromHistory('${entry.id}')">Open PDF / Print</button>
         </div>`;
