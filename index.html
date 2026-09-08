@@ -496,6 +496,8 @@
   .action-btn.secondary:hover{ border-color:var(--cyan); }
   .action-btn.docs{ background:#4285F4; border-color:#4285F4; color:#ffffff; }
   .action-btn.docs:hover{ opacity:.9; }
+  .action-btn.print-action { background: var(--purple); border-color: var(--purple); color: #ffffff; }
+  .action-btn.print-action:hover { opacity: .9; }
   .action-btn:disabled{ opacity:.5; cursor:wait; }
 
   .history-item{
@@ -540,13 +542,8 @@
   .history-delete:hover{ border-color:var(--red); color:var(--red); }
   .history-empty{ font-size:13px; color:var(--muted); }
 
-  #authView { display: none; }
-  .user-badge { font-family: var(--mono); font-size: 11px; color: var(--cyan); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .logout-btn {
-    background: none; border: 1px solid var(--line); color: var(--muted);
-    font-size: 11px; padding: 6px 10px; border-radius: 5px; cursor: pointer; transition: border-color .15s, color .15s; min-height: 32px;
-  }
-  .logout-btn:hover { border-color: var(--red); color: var(--red); }
+  .user-badge { font-family: var(--mono); font-size: 11px; color: var(--cyan); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; cursor: pointer; }
+  .user-badge:hover { text-decoration: underline; }
 
   .hud-menu-dropdown { position: relative; display: inline-block; }
   .hud-menu-btn {
@@ -632,7 +629,7 @@
     .hud-menu-dropdown { order: 1; }
     .hud-home-btn { order: 2; }
     
-    #hudUserBadge { 
+    .user-badge { 
       order: 3; 
       margin-left: auto !important; 
       margin-right: 0 !important;
@@ -700,12 +697,12 @@
     </div>
   </div>
 
-  <!-- Read-Only View Modal for Saved Evaluations -->
+  <!-- Read-Only View & Print Modal for Saved Evaluations (Bypasses Popup Blockers) -->
   <div id="viewReportModal" class="modal-overlay no-print" style="display:none;">
     <div class="viewer-modal-card">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:12px;">
         <div>
-          <div style="font-family:var(--mono); font-size:10px; color:var(--cyan); letter-spacing:.12em; text-transform:uppercase;">Read-Only View</div>
+          <div style="font-family:var(--mono); font-size:10px; color:var(--cyan); letter-spacing:.12em; text-transform:uppercase;">Report Viewer</div>
           <h3 id="viewModalTitle" style="margin:2px 0 0; font-size:18px; color:var(--text); font-weight:700;">Evaluation Report</h3>
         </div>
         <button type="button" onclick="closeViewModal()" style="background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer; line-height:1;">&times;</button>
@@ -717,7 +714,7 @@
 
       <div style="display:flex; gap:12px; justify-content:flex-end; border-top:1px solid var(--line); padding-top:12px;">
         <button type="button" class="action-btn secondary" onclick="closeViewModal()" style="padding:8px 18px; font-size:13px;">Close</button>
-        <button type="button" class="action-btn primary" id="viewModalPrintBtn" style="padding:8px 18px; font-size:13px;">Print / Open PDF</button>
+        <button type="button" class="action-btn primary" id="viewModalPrintBtn" style="padding:8px 18px; font-size:13px;">Print / Save as PDF</button>
       </div>
     </div>
   </div>
@@ -745,7 +742,7 @@
           <div class="hud-menu-content">
             <div class="hud-menu-inner">
               <button class="hud-menu-item" type="button" onclick="openProfileModal()">
-                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Profile</span>
+                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Profile & Storage</span>
               </button>
               <button class="hud-menu-item" type="button" onclick="openHistoryView('All')">
                 <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> All Saved Reports</span>
@@ -789,13 +786,14 @@
           Zoox // L3 Field Eval
           <strong>Portal Dashboard</strong>
         </div>
+
+        <div class="user-badge" onclick="openProfileModal()">
+          <span id="landingStorageIndicator">Mode: Cloud</span>
+        </div>
       </div>
     </div>
 
     <div class="landing-card">
-      <div id="landingUserBadge" class="user-badge" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--line);">
-        <span>Supabase Cloud Mode</span>
-      </div>
       <div class="hud-title" style="margin-bottom:6px;">Select Mission</div>
       <h2 style="margin:0 0 18px; font-weight:700; font-size:20px; color:var(--text);">Select Training Module</h2>
       <div style="margin-bottom:20px;">
@@ -819,13 +817,26 @@
   <div id="profileModal" class="modal-overlay no-print" style="display:none;">
     <div class="modal-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="margin:0; font-size:18px; color:var(--text); font-weight:700;">Evaluator Profile</h3>
+        <h3 style="margin:0; font-size:18px; color:var(--text); font-weight:700;">Evaluator Profile & Storage</h3>
         <button type="button" onclick="closeProfileModal()" style="background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1;">&times;</button>
       </div>
       
       <div class="profile-field">
-        <label style="margin:0; font-size:10px; color:var(--muted); font-family:var(--mono);">STORAGE MODE</label>
-        <div style="font-weight:600; font-size:15px; color:var(--text); margin-top:2px;">Supabase Cloud Synchronization</div>
+        <label style="margin:0 0 6px; font-size:10px; color:var(--muted); font-family:var(--mono);">STORAGE MODE TOGGLE</label>
+        <select id="storageModeSelect" onchange="switchStorageMode(this.value)" style="font-size:14px; padding:8px 10px;">
+          <option value="cloud">Supabase Cloud Sync</option>
+          <option value="local">Local Storage (Offline)</option>
+        </select>
+        <span style="font-size:11px; color:var(--muted); display:block; margin-top:6px;" id="storageModeDesc">Saves evaluation records directly to Supabase cloud database.</span>
+      </div>
+
+      <div class="profile-field" style="margin-top:12px;">
+        <label style="margin:0 0 6px; font-size:10px; color:var(--muted); font-family:var(--mono);">AUTO-REFRESH SYNC (30s)</label>
+        <select id="autoRefreshSelect" onchange="switchAutoRefresh(this.value)" style="font-size:14px; padding:8px 10px;">
+          <option value="on">Enabled (Refresh records every 30s)</option>
+          <option value="off">Disabled (Manual refresh only)</option>
+        </select>
+        <span style="font-size:11px; color:var(--muted); display:block; margin-top:6px;" id="autoRefreshDesc">Automatically fetches latest records in the background.</span>
       </div>
 
       <div class="danger-zone">
@@ -833,7 +844,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
           <div>
             <strong style="font-size:13px; color:var(--red); display:block;">Clear All Records</strong>
-            <span style="font-size:11px; color:var(--muted);">Permanently remove saved records from Supabase Cloud.</span>
+            <span style="font-size:11px; color:var(--muted);">Permanently remove saved records from current storage.</span>
           </div>
           <button type="button" class="btn-danger" onclick="handleDeleteAccount()">Clear Records</button>
         </div>
@@ -859,7 +870,7 @@
           <div class="hud-menu-content">
             <div class="hud-menu-inner">
               <button class="hud-menu-item" type="button" onclick="openProfileModal()">
-                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Profile</span>
+                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Profile & Storage</span>
               </button>
               <button class="hud-menu-item" type="button" onclick="openHistoryView('All')">
                 <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> All Saved Reports</span>
@@ -908,6 +919,10 @@
           <span id="historyPageTitle">Zoox // Saved Records</span>
           <strong id="historyPageSubtitle">Saved Reports & PDFs</strong>
         </div>
+
+        <div class="user-badge" onclick="openProfileModal()">
+          <span id="historyStorageIndicator">Mode: Cloud</span>
+        </div>
       </div>
     </div>
 
@@ -931,7 +946,7 @@
           <div class="hud-menu-content">
             <div class="hud-menu-inner">
               <button class="hud-menu-item" type="button" onclick="openProfileModal()">
-                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Profile</span>
+                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Profile & Storage</span>
               </button>
               <button class="hud-menu-item" type="button" onclick="attemptOpenHistory('All')">
                 <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> All Saved Reports</span>
@@ -976,7 +991,9 @@
           Home
         </button>
 
-        <div id="hudUserBadge" class="user-badge no-print">Supabase Cloud</div>
+        <div class="user-badge no-print" onclick="openProfileModal()">
+          <span id="formStorageIndicator">Mode: Cloud</span>
+        </div>
 
         <div class="hud-title">
           Zoox // L3 Field Eval
@@ -1113,6 +1130,7 @@
 
     <div class="action-row no-print">
       <button class="action-btn primary" id="saveBtn" onclick="saveDocument()">Save Evaluation</button>
+      <button class="action-btn print-action" id="printEvalBtn" onclick="openCurrentEvaluationPrintModal()">Open PDF / Print</button>
       <button class="action-btn docs" id="docsBtn" onclick="copyForGoogleDocs()">Copy for Google Docs</button>
       <button class="action-btn secondary" onclick="attemptCreateNew()">Create New / Select Training</button>
     </div>
@@ -1123,13 +1141,71 @@
 
 <script>
 // ==========================================
-// SUPABASE CLOUD CONFIGURATION & CLIENT
+// STORAGE MODE & SUPABASE CONFIGURATION
 // ==========================================
+let currentStorageMode = safeGetStorage('zoox_storage_mode') || 'cloud';
+let autoRefreshEnabled = safeGetStorage('zoox_auto_refresh') !== 'off'; // default ON
+let autoRefreshInterval = null;
+
 const SUPABASE_URL = 'https://vxpufrahrnwmtgltjstd.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_tRjMtsoo9aT-6n7dzj9p-w_HsUqJ520';
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const TABLE_NAME = 'evaluations';
+
+function updateStorageUIIndicators() {
+  const modeText = currentStorageMode === 'cloud' ? 'Mode: Cloud' : 'Mode: Local';
+  const descText = currentStorageMode === 'cloud' 
+    ? 'Saves evaluation records directly to Supabase cloud database.' 
+    : 'Saves evaluation records locally on your browser (offline mode).';
+  
+  document.querySelectorAll('#landingStorageIndicator, #historyStorageIndicator, #formStorageIndicator').forEach(el => {
+    if (el) el.textContent = modeText;
+  });
+  
+  const selectEl = document.getElementById('storageModeSelect');
+  if (selectEl) selectEl.value = currentStorageMode;
+  
+  const descEl = document.getElementById('storageModeDesc');
+  if (descEl) descEl.textContent = descText;
+
+  const refreshSelectEl = document.getElementById('autoRefreshSelect');
+  if (refreshSelectEl) refreshSelectEl.value = autoRefreshEnabled ? 'on' : 'off';
+  
+  const refreshDescEl = document.getElementById('autoRefreshDesc');
+  if (refreshDescEl) {
+    refreshDescEl.textContent = autoRefreshEnabled 
+      ? 'Active: Polling for updates every 30 seconds.' 
+      : 'Paused: Auto-refresh is turned off.';
+  }
+}
+
+function switchStorageMode(newMode) {
+  currentStorageMode = newMode;
+  safeSetStorage('zoox_storage_mode', newMode);
+  updateStorageUIIndicators();
+  loadHistoryFromStorage();
+}
+
+function switchAutoRefresh(val) {
+  autoRefreshEnabled = (val === 'on');
+  safeSetStorage('zoox_auto_refresh', val);
+  updateStorageUIIndicators();
+  setupAutoRefreshTicker();
+}
+
+function setupAutoRefreshTicker() {
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval);
+    autoRefreshInterval = null;
+  }
+  if (autoRefreshEnabled) {
+    autoRefreshInterval = setInterval(() => {
+      // Only refresh history if the history view or user menu is active, or silently sync in background
+      loadHistoryFromStorage(true);
+    }, 30000); // every 30 seconds
+  }
+}
 
 function showCustomConfirm(message) {
   return new Promise((resolve) => {
@@ -1869,6 +1945,7 @@ function triggerAutoSave() {
 
 function performAutoSave() {
   if (document.getElementById('mainFormWrap').style.display === 'none') return;
+  if (currentEditingId) return; // Do not overwrite drafts if we are actively viewing/editing an already saved record
 
   const categoryNotes = activeCategories.map((_, i) => {
     const el = document.getElementById(`catNotes-${i}`);
@@ -2004,6 +2081,8 @@ function checkLandingDraft() {
 function resumeDraftFromLanding() {
   const rawDraft = safeGetStorage('zoox_eval_draft');
   if (!rawDraft) return;
+  currentEditingId = null; // Fresh unsaved draft
+  document.getElementById('saveBtn').textContent = 'Save Evaluation';
   document.getElementById('landingView').style.display = 'none';
   document.getElementById('historyView').style.display = 'none';
   document.getElementById('mainFormWrap').style.display = 'block';
@@ -2181,7 +2260,6 @@ function buildPdfReportContent(entry = null) {
   const routesVal = entry ? (entry.routesVal || '—') : (document.getElementById('routesField').value || '—');
   const trainingType = entry ? (entry.trainingType || 'SWO') : document.getElementById('activeTrainingType').value;
   const useStandardText = (trainingType === 'Instructor' || trainingType === 'Manual Check-in' || trainingType === 'ZIP' || trainingType === 'Highway');
-  const isInstructor = (trainingType === 'Instructor');
   
   const evalCats = getCategoriesForType(trainingType);
   const maxTotal = evalCats.length * maxPerCategory;
@@ -2306,7 +2384,7 @@ function buildPdfReportContent(entry = null) {
 
   html += `<h2>Quick-Capture Observations</h2>`;
   
-  const qcSections = isInstructor ? [
+  const qcSections = trainingType === 'Instructor' ? [
     ["Additional Notes", qcAddNotesVal]
   ] : [
     ["Additional Notes", qcAddNotesVal],
@@ -2325,7 +2403,7 @@ function buildPdfReportContent(entry = null) {
 
   html += `<h2>Evaluator Feedback & Evaluations</h2>`;
 
-  const feedbackSections = isInstructor ? [
+  const feedbackSections = trainingType === 'Instructor' ? [
     ["Strengths", strengthsVal],
     ["Improvements", improvementsVal]
   ] : [
@@ -2352,30 +2430,47 @@ function buildPdfReportContent(entry = null) {
 }
 
 function openPdfFromHistory(id) {
-  const entry = savedHistory.find(e => e.id === id);
-  if (!entry) return;
-  const reportHtml = buildPdfReportContent(entry);
-  
-  const win = window.open('', '_blank');
-  if (!win) {
-    alert("Popup blocked! Please allow popups for this site to view/print your report.");
-    return;
+  openViewReportModal(id);
+}
+
+function openCurrentEvaluationPrintModal() {
+  if (currentEditingId) {
+    openViewReportModal(currentEditingId);
+  } else {
+    const tempSnapshot = {
+      trainingType: document.getElementById('activeTrainingType').value,
+      traineeName: document.getElementById('traineeNameField').value.trim() || 'Unnamed Trainee',
+      missionVal: getMissionValue(),
+      dateVal: document.getElementById('dateField').value || 'No date',
+      ticketVal: document.getElementById('ticketField') ? document.getElementById('ticketField').value : '',
+      routesVal: document.getElementById('routesField').value || '',
+      total: document.getElementById('totalScore') ? document.getElementById('totalScore').textContent : '0',
+      savedSwTimes: [...savedSwTimes],
+      scores: [...scores],
+      categoryNotes: activeCategories.map((_, i) => {
+        const el = document.getElementById(`catNotes-${i}`);
+        return el ? el.value : '';
+      }),
+      strengthsDetailed: document.getElementById('strengthsDetailedField') ? document.getElementById('strengthsDetailedField').value : '',
+      improvementsDetailed: document.getElementById('improvementsDetailedField') ? document.getElementById('improvementsDetailedField').value : '',
+      qcAddNotes: document.getElementById('qcAddNotes') ? document.getElementById('qcAddNotes').value : '',
+      qcOddCallouts: document.getElementById('qcOddCallouts') ? document.getElementById('qcOddCallouts').value : '',
+      qcDisengagements: document.getElementById('qcDisengagements') ? document.getElementById('qcDisengagements').value : '',
+      qcDataCol: document.getElementById('qcDataCol') ? document.getElementById('qcDataCol').value : '',
+      strengths: document.getElementById('strengthsField') ? document.getElementById('strengthsField').value : '',
+      improvements: document.getElementById('improvementsField') ? document.getElementById('improvementsField').value : ''
+    };
+    openViewReportModalForData(tempSnapshot);
   }
-  
-  win.document.open();
-  win.document.write(reportHtml);
-  win.document.close();
-  
-  setTimeout(() => {
-    win.focus();
-    win.print();
-  }, 400);
 }
 
 function openViewReportModal(id) {
-  const entry = savedHistory.find(e => e.id === id);
+  const entry = savedHistory.find(e => String(e.id) === String(id));
   if (!entry) return;
-  
+  openViewReportModalForData(entry);
+}
+
+function openViewReportModalForData(entry) {
   const reportHtml = buildPdfReportContent(entry);
   document.getElementById('viewModalTitle').textContent = `${entry.traineeName || 'Trainee'} - ${entry.missionVal || 'Report'}`;
   
@@ -2396,17 +2491,32 @@ function openViewReportModal(id) {
   printBtn.parentNode.replaceChild(newPrintBtn, printBtn);
   
   newPrintBtn.addEventListener('click', () => {
-    const win = window.open('', '_blank');
-    if (win) {
-      win.document.open();
-      win.document.write(reportHtml);
-      win.document.close();
+    const printWindow = window.open('', '_blank', 'height=700,width=800');
+    if (printWindow) {
+      printWindow.document.open();
+      printWindow.document.write(reportHtml);
+      printWindow.document.close();
       setTimeout(() => {
-        win.focus();
-        win.print();
-      }, 400);
+        printWindow.focus();
+        printWindow.print();
+      }, 500);
     } else {
-      alert("Popup blocked! Please allow popups to print.");
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+      iframe.contentDocument.open();
+      iframe.contentDocument.write(reportHtml);
+      iframe.contentDocument.close();
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        document.body.removeChild(iframe);
+      }, 500);
     }
   });
 
@@ -2465,21 +2575,18 @@ async function copyForGoogleDocs() {
   }
 }
 
-async function loadHistoryFromStorage(){
-  try {
-    const { data, error } = await supabaseClient
-      .from(TABLE_NAME)
-      .select('*')
-      .order('created_at', { ascending: false });
+async function loadHistoryFromStorage(isBackgroundPoll = false){
+  if (currentStorageMode === 'cloud') {
+    try {
+      const { data, error } = await supabaseClient
+        .from(TABLE_NAME)
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching history from Supabase:', error.message);
-      savedHistory = [];
-    } else {
-      savedHistory = (data || []).map(row => {
-        let parsedStrengths = row.strengths || '';
-        let parsedImprovements = row.improvements || '';
-        return {
+      if (error) {
+        if (!isBackgroundPoll) console.error('Error fetching history from Supabase:', error.message);
+      } else {
+        const freshHistory = (data || []).map(row => ({
           id: row.id,
           trainingType: row.training_type,
           traineeName: row.trainee_name,
@@ -2492,16 +2599,29 @@ async function loadHistoryFromStorage(){
           savedSwTimes: row.saved_sw_times || [],
           scores: row.scores || [],
           categoryNotes: row.category_notes || [],
-          strengths: parsedStrengths,
-          improvements: parsedImprovements
-        };
-      });
+          strengths: row.strengths || '',
+          improvements: row.improvements || ''
+        }));
+        
+        savedHistory = freshHistory;
+      }
+    } catch (e) {
+      if (!isBackgroundPoll) console.error('Unexpected error loading history from Supabase:', e);
     }
-  } catch (e) {
-    console.error('Unexpected error loading history from Supabase:', e);
-    savedHistory = [];
+  } else {
+    try {
+      const raw = safeGetStorage('zoox_local_evaluations');
+      savedHistory = raw ? JSON.parse(raw) : [];
+      savedHistory.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    } catch (e) {
+      savedHistory = [];
+    }
   }
-  renderHistorySections();
+
+  // Only re-render UI if history view is open or if it's not a background poll affecting active form state
+  if (document.getElementById('historyView').style.display !== 'none') {
+    renderHistorySections();
+  }
   updateMenuCounts();
 }
 
@@ -2523,7 +2643,7 @@ function openHistoryView(moduleFilter = 'All') {
     if (subEl) subEl.textContent = `${moduleFilter} Saved Reports & PDFs`;
   }
 
-  renderHistorySections();
+  loadHistoryFromStorage();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -2582,16 +2702,18 @@ function renderHistorySections() {
       const maxTotal = evalCats.length * maxPerCategory;
       const isStandardTextType = (entry.trainingType === 'Instructor' || entry.trainingType === 'Manual Check-in' || entry.trainingType === 'ZIP' || entry.trainingType === 'Highway');
       const scoreSub = isStandardTextType ? `${entry.trainingType} Evaluation` : `Score ${entry.total}/${maxTotal}`;
+      
+      const safeId = String(entry.id).replace(/'/g, "\\'");
       item.innerHTML = `
         <div class="history-meta">
           <div class="h-title"><span style="color:var(--cyan); font-family:var(--mono); font-size:11px; margin-right:6px;">[${entry.trainingType || 'SWO'}]</span>${entry.missionVal}</div>
           <div class="h-sub">${entry.dateVal} · ${scoreSub} · Saved at ${entry.timeLabel}</div>
         </div>
         <div class="history-actions">
-          <button class="history-delete" onclick="deleteHistoryItem('${entry.id}')">Delete</button>
-          <button class="history-view-btn" onclick="openViewReportModal('${entry.id}')">View</button>
-          <button class="history-edit" onclick="editHistoryItem('${entry.id}')">Edit</button>
-          <button class="history-link" onclick="openPdfFromHistory('${entry.id}')">Open PDF / Print</button>
+          <button class="history-delete" onclick="deleteHistoryItem('${safeId}')">Delete</button>
+          <button class="history-view-btn" onclick="openViewReportModal('${safeId}')">View</button>
+          <button class="history-edit" onclick="editHistoryItem('${safeId}')">Edit</button>
+          <button class="history-link" onclick="openPdfFromHistory('${safeId}')">Open PDF / Print</button>
         </div>`;
       listDiv.appendChild(item);
     });
@@ -2602,30 +2724,31 @@ function renderHistorySections() {
 }
 
 async function deleteHistoryItem(id){
-  const entry = savedHistory.find(e => e.id == id);
+  const entry = savedHistory.find(e => String(e.id) === String(id));
   if (!entry) return;
   const confirmed = await showCustomConfirm(`Delete record for ${entry.traineeName}?`);
   if (!confirmed) return;
   
-  try {
-    const { error } = await supabaseClient
-      .from(TABLE_NAME)
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-
-    savedHistory = savedHistory.filter(e => e.id != id);
-    renderHistorySections();
-    updateMenuCounts();
-
-    if (currentEditingId == id) {
-      currentEditingId = null;
-      const saveBtn = document.getElementById('saveBtn');
-      if (saveBtn) saveBtn.textContent = 'Save Evaluation';
+  if (currentStorageMode === 'cloud') {
+    try {
+      const { error } = await supabaseClient.from(TABLE_NAME).delete().eq('id', id);
+      if (error) throw error;
+    } catch (err) {
+      alert('Could not delete item from Supabase: ' + err.message);
+      return;
     }
-  } catch (err) {
-    alert('Could not delete item from Supabase: ' + err.message);
+  } else {
+    savedHistory = savedHistory.filter(e => String(e.id) !== String(id));
+    safeSetStorage('zoox_local_evaluations', JSON.stringify(savedHistory));
+  }
+
+  renderHistorySections();
+  updateMenuCounts();
+
+  if (String(currentEditingId) === String(id)) {
+    currentEditingId = null;
+    const saveBtn = document.getElementById('saveBtn');
+    if (saveBtn) saveBtn.textContent = 'Save Evaluation';
   }
 }
 
@@ -2636,31 +2759,33 @@ function loadSnapshotIntoForm(snapshot) {
   previousTrainingType = tType;
   onTrainingTypeChange();
 
-  document.getElementById('traineeNameField').value = snapshot.traineeName || '';
-  document.getElementById('dateField').value = snapshot.dateVal || '';
-  if (document.getElementById('ticketField')) document.getElementById('ticketField').value = snapshot.ticketVal || '';
-  document.getElementById('routesField').value = snapshot.routesVal || '';
+  document.getElementById('traineeNameField').value = snapshot.traineeName || snapshot.trainee_name || '';
+  document.getElementById('dateField').value = snapshot.dateVal || snapshot.date_val || '';
+  if (document.getElementById('ticketField')) document.getElementById('ticketField').value = snapshot.ticketVal || snapshot.ticket_val || '';
+  document.getElementById('routesField').value = snapshot.routesVal || snapshot.routes_val || '';
 
-  if (snapshot.missionVal && missionField) {
-    missionField.value = snapshot.missionVal;
+  const targetMission = snapshot.missionVal || snapshot.mission_val;
+  if (targetMission && missionField) {
+    missionField.value = targetMission;
     toggleCustomMission();
-    if (snapshot.missionVal === 'Other' && snapshot.customMissionVal) {
+    if (targetMission === 'Other' && snapshot.customMissionVal) {
       customMissionField.value = snapshot.customMissionVal;
     }
   }
 
   if (Array.isArray(snapshot.savedSwTimes)) {
     savedSwTimes = [...snapshot.savedSwTimes];
-  } else if (snapshot.savedSwTime) {
-    savedSwTimes = [snapshot.savedSwTime];
+  } else if (Array.isArray(snapshot.saved_sw_times)) {
+    savedSwTimes = [...snapshot.saved_sw_times];
   } else {
     savedSwTimes = [];
   }
   renderSavedStopwatches();
   updateSetupTitleDisplay();
 
-  if (Array.isArray(snapshot.scores)) {
-    snapshot.scores.forEach((s, idx) => {
+  const targetScores = snapshot.scores;
+  if (Array.isArray(targetScores)) {
+    targetScores.forEach((s, idx) => {
       scores[idx] = s;
       const scoreRow = document.getElementById(`scores-${idx}`);
       if (scoreRow) {
@@ -2678,8 +2803,9 @@ function loadSnapshotIntoForm(snapshot) {
     updateTotal();
   }
 
-  if (Array.isArray(snapshot.categoryNotes)) {
-    snapshot.categoryNotes.forEach((note, idx) => {
+  const targetNotes = snapshot.categoryNotes || snapshot.category_notes;
+  if (Array.isArray(targetNotes)) {
+    targetNotes.forEach((note, idx) => {
       const el = document.getElementById(`catNotes-${idx}`);
       if (el) {
         el.value = note || '';
@@ -2696,61 +2822,65 @@ function loadSnapshotIntoForm(snapshot) {
 }
 
 function editHistoryItem(id) {
-  const entry = savedHistory.find(e => e.id == id);
+  const entry = savedHistory.find(e => String(e.id) === String(id));
   if (!entry) return;
 
-  currentEditingId = id;
+  currentEditingId = entry.id;
   document.getElementById('landingView').style.display = 'none';
   document.getElementById('historyView').style.display = 'none';
   document.getElementById('mainFormWrap').style.display = 'block';
   loadSnapshotIntoForm(entry);
+  
   const saveBtn = document.getElementById('saveBtn');
   if (saveBtn) saveBtn.textContent = 'Update Evaluation';
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function saveDocumentInternal() {
-  try {
-    const traineeName = (document.getElementById('traineeNameField') ? document.getElementById('traineeNameField').value : '').trim() || 'Unnamed Trainee';
-    const missionVal = typeof getMissionValue === 'function' ? getMissionValue() : 'No mission selected';
-    const dateVal = (document.getElementById('dateField') ? document.getElementById('dateField').value : '') || 'no date';
-    const ticketVal = document.getElementById('ticketField') ? document.getElementById('ticketField').value : '';
-    const routesVal = document.getElementById('routesField') ? document.getElementById('routesField').value : '';
-    const total = (document.getElementById('totalScore') ? document.getElementById('totalScore').textContent : '0') || '0';
-    const trainingType = (document.getElementById('activeTrainingType') ? document.getElementById('activeTrainingType').value : 'SWO') || 'SWO';
-    const useStandardText = (trainingType === 'Instructor' || trainingType === 'Manual Check-in' || trainingType === 'ZIP' || trainingType === 'Highway');
-    
-    const now = new Date();
-    const timeLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const traineeName = (document.getElementById('traineeNameField') ? document.getElementById('traineeNameField').value : '').trim() || 'Unnamed Trainee';
+  const missionVal = typeof getMissionValue === 'function' ? getMissionValue() : 'No mission selected';
+  const dateVal = (document.getElementById('dateField') ? document.getElementById('dateField').value : '') || 'no date';
+  const ticketVal = document.getElementById('ticketField') ? document.getElementById('ticketField').value : '';
+  const routesVal = document.getElementById('routesField') ? document.getElementById('routesField').value : '';
+  const total = (document.getElementById('totalScore') ? document.getElementById('totalScore').textContent : '0') || '0';
+  const trainingType = (document.getElementById('activeTrainingType') ? document.getElementById('activeTrainingType').value : 'SWO') || 'SWO';
+  const useStandardText = (trainingType === 'Instructor' || trainingType === 'Manual Check-in' || trainingType === 'ZIP' || trainingType === 'Highway');
+  
+  const now = new Date();
+  const timeLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    const categoryNotes = activeCategories.map((_, i) => {
-      const el = document.getElementById(`catNotes-${i}`);
-      return el ? (el.value || '') : '';
-    });
+  const categoryNotes = activeCategories.map((_, i) => {
+    const el = document.getElementById(`catNotes-${i}`);
+    return el ? (el.value || '') : '';
+  });
 
-    const strengthsDetailedVal = document.getElementById('strengthsDetailedField') ? document.getElementById('strengthsDetailedField').value : '';
-    const improvementsDetailedVal = document.getElementById('improvementsDetailedField') ? document.getElementById('improvementsDetailedField').value : '';
-    const qcAddNotesVal = document.getElementById('qcAddNotes') ? document.getElementById('qcAddNotes').value : '';
-    const qcOddCalloutsVal = document.getElementById('qcOddCallouts') ? document.getElementById('qcOddCallouts').value : '';
-    const qcDisengagementsVal = document.getElementById('qcDisengagements') ? document.getElementById('qcDisengagements').value : '';
-    const qcDataColVal = document.getElementById('qcDataCol') ? document.getElementById('qcDataCol').value : '';
-    const strengthsVal = document.getElementById('strengthsField') ? document.getElementById('strengthsField').value : '';
-    const improvementsVal = document.getElementById('improvementsField') ? document.getElementById('improvementsField').value : '';
+  const strengthsDetailedVal = document.getElementById('strengthsDetailedField') ? document.getElementById('strengthsDetailedField').value : '';
+  const improvementsDetailedVal = document.getElementById('improvementsDetailedField') ? document.getElementById('improvementsDetailedField').value : '';
+  const qcAddNotesVal = document.getElementById('qcAddNotes') ? document.getElementById('qcAddNotes').value : '';
+  const qcOddCalloutsVal = document.getElementById('qcOddCallouts') ? document.getElementById('qcOddCallouts').value : '';
+  const qcDisengagementsVal = document.getElementById('qcDisengagements') ? document.getElementById('qcDisengagements').value : '';
+  const qcDataColVal = document.getElementById('qcDataCol') ? document.getElementById('qcDataCol').value : '';
+  const strengthsVal = document.getElementById('strengthsField') ? document.getElementById('strengthsField').value : '';
+  const improvementsVal = document.getElementById('improvementsField') ? document.getElementById('improvementsField').value : '';
 
-    const combinedStrengths = [
-      strengthsDetailedVal ? `--- Detailed Strengths ---\n${strengthsDetailedVal}` : '',
-      qcAddNotesVal ? `--- Additional Notes ---\n${qcAddNotesVal}` : '',
-      qcOddCalloutsVal ? `--- ODD Callouts ---\n${qcOddCalloutsVal}` : '',
-      qcDataColVal ? `--- Data Collection ---\n${qcDataColVal}` : '',
-      strengthsVal ? `--- General Strengths ---\n${strengthsVal}` : ''
-    ].filter(Boolean).join('\n\n');
+  const combinedStrengths = [
+    strengthsDetailedVal ? `--- Detailed Strengths ---\n${strengthsDetailedVal}` : '',
+    qcAddNotesVal ? `--- Additional Notes ---\n${qcAddNotesVal}` : '',
+    qcOddCalloutsVal ? `--- ODD Callouts ---\n${qcOddCalloutsVal}` : '',
+    qcDataColVal ? `--- Data Collection ---\n${qcDataColVal}` : '',
+    strengthsVal ? `--- General Strengths ---\n${strengthsVal}` : ''
+  ].filter(Boolean).join('\n\n');
 
-    const combinedImprovements = [
-      improvementsDetailedVal ? `--- Detailed Improvements ---\n${improvementsDetailedVal}` : '',
-      qcDisengagementsVal ? `--- Disengagements ---\n${qcDisengagementsVal}` : '',
-      improvementsVal ? `--- General Improvements ---\n${improvementsVal}` : ''
-    ].filter(Boolean).join('\n\n');
+  const combinedImprovements = [
+    improvementsDetailedVal ? `--- Detailed Improvements ---\n${improvementsDetailedVal}` : '',
+    qcDisengagementsVal ? `--- Disengagements ---\n${qcDisengagementsVal}` : '',
+    improvementsVal ? `--- General Improvements ---\n${improvementsVal}` : ''
+  ].filter(Boolean).join('\n\n');
 
+  const scoresArray = Array.isArray(scores) ? scores.map(s => (s === null || s === undefined ? (useStandardText ? 'Not Selected' : 0) : s)) : [];
+
+  if (currentStorageMode === 'cloud') {
     const payload = {
       training_type: String(trainingType),
       trainee_name: String(traineeName),
@@ -2761,56 +2891,86 @@ async function saveDocumentInternal() {
       total_score: String(total),
       time_label: String(timeLabel),
       saved_sw_times: [...savedSwTimes],
-      scores: Array.isArray(scores) ? scores.map(s => (s === null || s === undefined ? (useStandardText ? 'Not Selected' : 0) : s)) : [],
+      scores: scoresArray,
       category_notes: categoryNotes,
       strengths: combinedStrengths,
       improvements: combinedImprovements
     };
 
     if (currentEditingId) {
-      const { error } = await supabaseClient
-        .from(TABLE_NAME)
-        .update(payload)
-        .eq('id', currentEditingId);
-
+      const { error } = await supabaseClient.from(TABLE_NAME).update(payload).eq('id', currentEditingId);
       if (error) throw error;
     } else {
-      const { error } = await supabaseClient
-        .from(TABLE_NAME)
-        .insert([payload]);
-
+      const { data, error } = await supabaseClient.from(TABLE_NAME).insert([payload]).select();
       if (error) throw error;
+      if (data && data.length > 0) {
+        currentEditingId = data[0].id;
+      }
     }
+  } else {
+    const recordId = currentEditingId || 'local_' + Date.now();
+    const localRecord = {
+      id: recordId,
+      trainingType: String(trainingType),
+      trainee_name: String(traineeName),
+      traineeName: String(traineeName),
+      missionVal: String(missionVal || 'No mission selected'),
+      dateVal: String(dateVal),
+      ticketVal: String(ticketVal || ''),
+      routesVal: String(routesVal || ''),
+      total: String(total),
+      total_score: String(total),
+      timeLabel: String(timeLabel),
+      savedSwTimes: [...savedSwTimes],
+      scores: scoresArray,
+      categoryNotes: categoryNotes,
+      strengths: combinedStrengths,
+      improvements: combinedImprovements,
+      timestamp: Date.now()
+    };
 
-    await loadHistoryFromStorage();
-    clearAutoSaveDraft();
-    currentEditingId = null;
-    updateMenuCounts();
-  } catch (err) {
-    console.error("Save Evaluation Error:", err);
-    throw err;
+    let existing = [];
+    try {
+      const raw = safeGetStorage('zoox_local_evaluations');
+      existing = raw ? JSON.parse(raw) : [];
+    } catch(e) { existing = []; }
+
+    if (currentEditingId) {
+      existing = existing.filter(item => String(item.id) !== String(currentEditingId));
+    }
+    existing.unshift(localRecord);
+    safeSetStorage('zoox_local_evaluations', JSON.stringify(existing));
+    currentEditingId = recordId;
   }
+
+  await loadHistoryFromStorage();
+  clearAutoSaveDraft();
+  
+  const saveBtn = document.getElementById('saveBtn');
+  if (saveBtn) saveBtn.textContent = 'Update Evaluation';
+
+  updateMenuCounts();
 }
 
 async function saveDocument(){
   const saveBtn = document.getElementById('saveBtn');
   if (saveBtn) {
     saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving to Cloud...';
+    saveBtn.textContent = 'Saving...';
   }
 
   try {
     await saveDocumentInternal();
     if (saveBtn) {
-      saveBtn.textContent = 'Save Evaluation';
+      saveBtn.textContent = 'Update Evaluation';
     }
-    alert("Evaluation saved successfully to Supabase Cloud!");
+    alert(`Evaluation saved successfully to ${currentStorageMode === 'cloud' ? 'Supabase Cloud' : 'Local Storage'}!`);
   } catch (err) {
-    alert("Could not save evaluation to cloud service: " + (err.message || err));
+    alert("Could not save evaluation: " + (err.message || err));
   } finally {
     if (saveBtn) {
       saveBtn.disabled = false;
-      saveBtn.textContent = 'Save Evaluation';
+      saveBtn.textContent = currentEditingId ? 'Update Evaluation' : 'Save Evaluation';
     }
   }
 }
@@ -2819,6 +2979,7 @@ function createNewForm(){
   currentEditingId = null;
   clearAutoSaveDraft();
   document.getElementById('saveBtn').textContent = 'Save Evaluation';
+  
   document.querySelectorAll('#pdfRoot input[type=text], #pdfRoot textarea').forEach(el => {
     el.value = '';
     autoResizeTextarea(el);
@@ -2828,6 +2989,7 @@ function createNewForm(){
   savedSwTimes = [];
   renderSavedStopwatches();
   updateSetupTitleDisplay();
+  resetScores();
   document.getElementById('mainFormWrap').style.display = 'none';
   document.getElementById('historyView').style.display = 'none';
   document.getElementById('landingView').style.display = 'block';
@@ -2844,31 +3006,34 @@ function closeProfileModal() {
 }
 
 async function handleDeleteAccount() {
-  const confirmed = await showCustomConfirm("Permanently delete ALL saved evaluation records from Supabase Cloud?");
+  const confirmed = await showCustomConfirm(`Permanently delete ALL saved evaluation records from ${currentStorageMode === 'cloud' ? 'Supabase Cloud' : 'Local Storage'}?`);
   if (!confirmed) return;
 
-  try {
-    const { error } = await supabaseClient
-      .from(TABLE_NAME)
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Deletes all rows
-
-    if (error) throw error;
-
-    savedHistory = [];
-    renderHistorySections();
-    updateMenuCounts();
-    closeProfileModal();
-    alert("All evaluation records deleted from cloud storage.");
-  } catch (err) {
-    alert("Could not delete records: " + err.message);
+  if (currentStorageMode === 'cloud') {
+    try {
+      const { error } = await supabaseClient.from(TABLE_NAME).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (error) throw error;
+    } catch (err) {
+      alert("Could not delete records from cloud: " + err.message);
+      return;
+    }
+  } else {
+    safeSetStorage('zoox_local_evaluations', JSON.stringify([]));
   }
+
+  savedHistory = [];
+  renderHistorySections();
+  updateMenuCounts();
+  closeProfileModal();
+  alert("All evaluation records deleted.");
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   setDateToday();
   populateMissionDropdown();
+  updateStorageUIIndicators();
   loadHistoryFromStorage();
+  setupAutoRefreshTicker();
   attachAutoNumberListeners();
   updateQuickCaptureCounts();
   checkLandingDraft();
