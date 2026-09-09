@@ -545,6 +545,17 @@
   .user-badge { font-family: var(--mono); font-size: 11px; color: var(--cyan); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; cursor: pointer; }
   .user-badge:hover { text-decoration: underline; }
 
+  .hud-refresh-btn {
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+    padding: 8px 10px; border-radius: 7px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; transition: border-color .15s, background .15s, color .15s, transform .2s;
+    min-height: 38px; min-width: 38px;
+    margin-left: auto;
+  }
+  .hud-refresh-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .hud-refresh-btn.spinning svg { animation: spin 0.8s linear infinite; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
   .hud-menu-dropdown { position: relative; display: inline-block; }
   .hud-menu-btn {
     border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
@@ -628,9 +639,10 @@
     
     .hud-menu-dropdown { order: 1; }
     .hud-home-btn { order: 2; }
+    .hud-refresh-btn { order: 3; margin-left: 0; }
     
     .user-badge { 
-      order: 3; 
+      order: 4; 
       margin-left: auto !important; 
       margin-right: 0 !important;
       font-size: 11px;
@@ -639,14 +651,14 @@
     }
     
     .hud-title { 
-      order: 4; 
+      order: 5; 
       flex: 1 1 calc(100% - 110px); 
       margin-top: 6px; 
       padding-top: 6px;
       border-top: 1px solid var(--line);
     }
     .hud-score { 
-      order: 5; 
+      order: 6; 
       margin-left: auto; 
       margin-top: 6px; 
       padding-top: 6px;
@@ -782,6 +794,14 @@
           </div>
         </div>
 
+        <button class="hud-refresh-btn no-print" onclick="triggerManualRefresh(this)" title="Refresh Data" aria-label="Refresh Data">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+
         <div class="hud-title">
           Zoox // L3 Field Eval
           <strong>Portal Dashboard</strong>
@@ -915,6 +935,14 @@
           Home
         </button>
 
+        <button class="hud-refresh-btn no-print" onclick="triggerManualRefresh(this)" title="Refresh Data" aria-label="Refresh Data">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+
         <div class="hud-title">
           <span id="historyPageTitle">Zoox // Saved Records</span>
           <strong id="historyPageSubtitle">Saved Reports & PDFs</strong>
@@ -989,6 +1017,14 @@
         <button class="hud-home-btn no-print" onclick="attemptGoHome()" title="Return to Training Selection">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
           Home
+        </button>
+
+        <button class="hud-refresh-btn no-print" onclick="triggerManualRefresh(this)" title="Refresh Data" aria-label="Refresh Data">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
         </button>
 
         <div class="user-badge no-print" onclick="openProfileModal()">
@@ -1201,10 +1237,17 @@ function setupAutoRefreshTicker() {
   }
   if (autoRefreshEnabled) {
     autoRefreshInterval = setInterval(() => {
-      // Only refresh history if the history view or user menu is active, or silently sync in background
       loadHistoryFromStorage(true);
     }, 30000); // every 30 seconds
   }
+}
+
+async function triggerManualRefresh(btnEl) {
+  if (btnEl) btnEl.classList.add('spinning');
+  await loadHistoryFromStorage(false);
+  setTimeout(() => {
+    if (btnEl) btnEl.classList.remove('spinning');
+  }, 600);
 }
 
 function showCustomConfirm(message) {
@@ -2618,7 +2661,6 @@ async function loadHistoryFromStorage(isBackgroundPoll = false){
     }
   }
 
-  // Only re-render UI if history view is open or if it's not a background poll affecting active form state
   if (document.getElementById('historyView').style.display !== 'none') {
     renderHistorySections();
   }
