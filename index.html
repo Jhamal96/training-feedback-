@@ -54,12 +54,13 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   }
 
-  /* ---- HUD Header (Sticky & Floating Access Container) ---- */
+  /* ---- HUD Header (Sticky to top) ---- */
   .hud{
-    position:sticky; top:0; z-index:40;
-    background:linear-gradient(180deg, var(--bg) 85%, transparent);
-    padding:12px 0 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    position: sticky; 
+    top: 0; 
+    z-index: 50;
+    background: var(--bg);
+    padding: 12px 0 0px;
   }
   .hud-inner{
     background:var(--panel);
@@ -151,13 +152,14 @@
   }
   .autosave-badge.show { opacity: 1; }
 
-  /* ---- Quick Navigation Bar (Sticky beneath HUD) ---- */
+  /* ---- Quick Navigation Bar (Sticky directly below HUD) ---- */
   .quick-nav-container {
     position: sticky;
-    top: 76px;
-    z-index: 30;
-    background: linear-gradient(180deg, var(--bg) 70%, transparent);
-    padding-bottom: 6px;
+    top: 74px; /* Matches exact height offset of the HUD header */
+    z-index: 45;
+    background: var(--bg);
+    padding-top: 6px;
+    padding-bottom: 8px;
   }
   .quick-nav-bar {
     display: flex;
@@ -297,7 +299,7 @@
   .links a{ color:var(--cyan); text-decoration:none; margin-right:16px; display:inline-block; }
   .links a:hover{ text-decoration:underline; }
 
-  /* ---- Stopwatch Styling Redesign ---- */
+  /* ---- Stopwatch Styling ---- */
   .stopwatch-wrapper {
     background: var(--panel-2);
     border: 1px solid var(--line);
@@ -402,7 +404,6 @@
 
   .scores{ display:flex; gap:6px; flex-wrap:wrap; }
   
-  /* Tooltip Wrapper Styles */
   .tooltip-container {
     position: relative;
     display: flex;
@@ -611,7 +612,6 @@
     max-height: 90vh; overflow-y: auto;
   }
   
-  /* Read-Only Viewer Modal Specific Styles */
   .viewer-modal-card {
     background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
     padding: 24px; max-width: 760px; width: 100%; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
@@ -697,7 +697,7 @@
 <body>
 <div class="wrap" id="pdfRoot">
 
-  <!-- Custom Yes / No Confirmation Modal -->
+  <!-- Custom Confirmation Modal -->
   <div id="customConfirmModal" class="modal-overlay no-print" style="display:none;">
     <div class="modal-card" style="max-width: 400px; text-align: center;">
       <h3 style="margin: 0 0 12px; font-size: 18px; color: var(--text); font-weight: 700;">Confirmation</h3>
@@ -709,7 +709,7 @@
     </div>
   </div>
 
-  <!-- Read-Only View & Print Modal for Saved Evaluations (Bypasses Popup Blockers) -->
+  <!-- Read-Only View & Print Modal -->
   <div id="viewReportModal" class="modal-overlay no-print" style="display:none;">
     <div class="viewer-modal-card">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:12px;">
@@ -720,9 +720,7 @@
         <button type="button" onclick="closeViewModal()" style="background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer; line-height:1;">&times;</button>
       </div>
       
-      <div class="viewer-content-body" id="viewModalContentContainer">
-        <!-- Injected report summary HTML -->
-      </div>
+      <div class="viewer-content-body" id="viewModalContentContainer"></div>
 
       <div style="display:flex; gap:12px; justify-content:flex-end; border-top:1px solid var(--line); padding-top:12px;">
         <button type="button" class="action-btn secondary" onclick="closeViewModal()" style="padding:8px 18px; font-size:13px;">Close</button>
@@ -1045,7 +1043,7 @@
       </div>
     </div>
 
-    <!-- Quick Action / Navigation Sticky Tab Section -->
+    <!-- Quick Navigation Bar -->
     <div class="quick-nav-container no-print">
       <div class="quick-nav-bar" id="quickNavBar">
         <button type="button" class="quick-nav-btn" onclick="scrollToSection('sessionInfoCard')">Session Info</button>
@@ -1056,7 +1054,7 @@
       </div>
     </div>
 
-    <!-- Session Info Card (Stationary) -->
+    <!-- Session Info Card -->
     <div class="card" id="sessionInfoCard" style="margin-top:14px;">
       <div class="section-label">Session Info</div>
       <div class="grid-4" id="sessionInfoGrid" style="margin-top:12px;">
@@ -1073,21 +1071,19 @@
           </select>
         </div>
         <div><label>Date</label><input type="date" id="dateField"></div>
-        <div><label>Trainee Name</label><input type="text" id="traineeNameField"></div>
+        <div><label>Trainee Name</label><input type="text" id="traineeNameField" class="autocap-input"></div>
         <div id="missionFieldWrapper">
           <label>Current Mission</label>
           <select id="missionField" onchange="toggleCustomMission()"></select>
-          <input type="text" id="customMissionField" placeholder="Specify custom mission..." style="display:none; margin-top:6px;">
+          <input type="text" id="customMissionField" class="autocap-input" placeholder="Specify custom mission..." style="display:none; margin-top:6px;">
         </div>
         <div id="ticketFieldWrapper"><label>Ticket #</label><input type="text" id="ticketField"></div>
-        <div><label>Routes</label><input type="text" id="routesField"></div>
+        <div><label>Routes</label><input type="text" id="routesField" class="autocap-input"></div>
       </div>
-      <div class="links" id="dynamicLinksContainer" style="margin-top:14px; margin-bottom:0;">
-        <!-- Dynamically rendered based on active training tab -->
-      </div>
+      <div class="links" id="dynamicLinksContainer" style="margin-top:14px; margin-bottom:0;"></div>
     </div>
 
-    <!-- Mission Timer Card (Redesigned matching image style) -->
+    <!-- Mission Timer Card -->
     <div class="card" id="missionTimerCard" style="margin-top:14px;">
       <div class="section-label">Mission Timer</div>
       <div class="stopwatch-wrapper">
@@ -1114,14 +1110,51 @@
         </div>
         <div id="qcOddCalloutsWrap">
           <label>ODD Callouts (<span id="count-qcOddCallouts">0</span>)</label>
+          <!-- ODD Callouts Cascading Selectors -->
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <select id="oddCategoryBox1" onchange="onOddBox1Change()" style="flex:1; font-size:12px; padding:6px 8px; min-height:34px;">
+              <option value="" disabled selected>-- Select Type --</option>
+              <option value="Operational">Operational</option>
+            </select>
+            <select id="oddCategoryBox2" style="flex:1; font-size:12px; padding:6px 8px; min-height:34px;">
+              <option value="" disabled selected>-- Select Subtype --</option>
+            </select>
+            <button type="button" class="action-btn secondary" onclick="insertOddCalloutTag()" style="padding:6px 12px; font-size:12px; min-height:34px;">Insert</button>
+          </div>
           <textarea id="qcOddCallouts" class="auto-number-box" placeholder="ODD callouts made..."></textarea>
         </div>
         <div id="qcDisengagementsWrap">
           <label>Disengagements (<span id="count-qcDisengagements">0</span>)</label>
+          <!-- Disengagement Cascading Selectors -->
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <select id="disengCategoryBox1" onchange="onDisengBox1Change()" style="flex:1; font-size:12px; padding:6px 8px; min-height:34px;">
+              <option value="" disabled selected>-- Select Type --</option>
+              <option value="Operational">Operational</option>
+              <option value="Pudo">Pudo</option>
+              <option value="Other">Other</option>
+              <option value="Stuck">Stuck</option>
+            </select>
+            <select id="disengCategoryBox2" style="flex:1; font-size:12px; padding:6px 8px; min-height:34px;">
+              <option value="" disabled selected>-- Select Subtype --</option>
+            </select>
+            <button type="button" class="action-btn secondary" onclick="insertDisengagementTag()" style="padding:6px 12px; font-size:12px; min-height:34px;">Insert</button>
+          </div>
           <textarea id="qcDisengagements" class="auto-number-box" placeholder="Disengagement details..."></textarea>
         </div>
         <div id="qcDataColWrap">
           <label>Data Collection (<span id="count-qcDataCol">0</span>)</label>
+          <!-- Data Collection Direct Drop-down Bar -->
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <select id="dataColHashtagSelect" style="flex:1; font-size:12px; padding:6px 8px; min-height:34px;">
+              <option value="" disabled selected>-- Select Hashtag --</option>
+              <option value="#idm">#idm</option>
+              <option value="#animal">#animal</option>
+              <option value="#emergency">#emergency</option>
+              <option value="#unique_vehicle">#unique_vehicle</option>
+              <option value="ADD_CUSTOM">+ Add Custom Hashtag...</option>
+            </select>
+            <button type="button" class="action-btn secondary" onclick="insertDataColTag()" style="padding:6px 12px; font-size:12px; min-height:34px;">Insert</button>
+          </div>
           <textarea id="qcDataCol" class="auto-number-box" placeholder="Data collection hashtags/notes..."></textarea>
         </div>
       </div>
@@ -1180,8 +1213,9 @@
 // STORAGE MODE & SUPABASE CONFIGURATION
 // ==========================================
 let currentStorageMode = safeGetStorage('zoox_storage_mode') || 'cloud';
-let autoRefreshEnabled = safeGetStorage('zoox_auto_refresh') !== 'off'; // default ON
+let autoRefreshEnabled = safeGetStorage('zoox_auto_refresh') !== 'off';
 let autoRefreshInterval = null;
+let hasUnsavedChanges = false; // Tracks if modifications occurred after saving
 
 const SUPABASE_URL = 'https://vxpufrahrnwmtgltjstd.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_tRjMtsoo9aT-6n7dzj9p-w_HsUqJ520';
@@ -1238,7 +1272,7 @@ function setupAutoRefreshTicker() {
   if (autoRefreshEnabled) {
     autoRefreshInterval = setInterval(() => {
       loadHistoryFromStorage(true);
-    }, 30000); // every 30 seconds
+    }, 30000);
   }
 }
 
@@ -1293,7 +1327,10 @@ function scrollToBottom() {
 function scrollToSection(elementId) {
   const el = document.getElementById(elementId);
   if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const headerOffset = 130; 
+    const elementPosition = el.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+    window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
   }
 }
 
@@ -1423,7 +1460,7 @@ const instructorHoverDetails = {
     "Above Standard": "Instructor always fills in feedback form before the beginning of their mission the next day. Each category is scored, and categories graded a '2' or below are always reflected in written feedback. No training JIRA tickets from the previous week are left open Trainee misses no instructor syncs in the previous four weeks or, if they did, had a medical reasoning or gave Training Associate previous notice."
   },
   5: {
-    "Below Standards": "Instructor is NOT consistently encouraging trainee to be efficient and allows them to squander time during procedures that they've previously shown competency in, and/or Instructor encourages trainee to take more break time than is necessary to properly execute mission, and/or Instructor encourages team to return to HQ more than 10 minutes before the end of shift.",
+    "Below Standards": "Instructor is NOT consistently encouraging trainee to be efficient and allows them to squander time during procedures that they've previously shown competency in, and/or Instructor encourages trainee to take more break time than is necessary to properly execute mission, and//or Instructor encourages team to return to HQ more than 10 minutes before the end of shift.",
     "Meeting Standard": "More often than not, instructor encourages trainee to be efficient, not allowing them to squander time during procedures that they've previously shown competency in, and Instructor encourages trainee to not take more break time than is necessary to properly execute mission, and Instructor encourages team to return to HQ no more than 10 minutes before the end of shift.",
     "Above Standard": "Instructor continuously encourages trainee to be efficient, not allowing them to squander time during procedures that they've previously shown competency in, and Instructor encourages trainee to not take more break time than is necessary to properly execute mission, and Instructor encourages team to return to HQ no more than 10 minutes before the end of shift."
   },
@@ -1574,7 +1611,7 @@ function renderCategoryCards() {
       ${tallyHtml}
       <div style="margin-top:12px;" class="cat-notes-wrap">
         <label>Notes</label>
-        <textarea id="catNotes-${i}" class="auto-number-box" placeholder="Observations for this category..." oninput="autoResizeTextarea(this)"></textarea>
+        <textarea id="catNotes-${i}" class="auto-number-box autocap-textarea" placeholder="Observations for this category..." oninput="autoResizeTextarea(this)"></textarea>
       </div>`;
     catContainer.appendChild(card);
 
@@ -1612,6 +1649,7 @@ function renderCategoryCards() {
             btn.classList.add('selected');
             card.querySelector(`#tally-${i} span`).textContent = optText;
           }
+          hasUnsavedChanges = true;
           triggerAutoSave();
         });
 
@@ -1637,6 +1675,7 @@ function renderCategoryCards() {
             card.querySelector(`#tally-${i} span`).textContent = s;
           }
           updateTotal();
+          hasUnsavedChanges = true;
           triggerAutoSave();
         });
         scoreRow.appendChild(btn);
@@ -1652,6 +1691,7 @@ function renderCategoryCards() {
   }
   updateSetupTitleDisplay();
   attachAutoNumberListeners();
+  attachAutoCapitalizeListeners();
 }
 
 function populateMissionDropdown() {
@@ -1713,6 +1753,31 @@ function updateQuickCaptureCounts() {
   });
 }
 
+function autoCapitalizeText(text) {
+  if (!text) return text;
+  let result = text.charAt(0).toUpperCase() + text.slice(1);
+  result = result.replace(/(\.\s+)([a-z])/g, (match, p1, p2) => p1 + p2.toUpperCase());
+  return result;
+}
+
+function attachAutoCapitalizeListeners() {
+  document.querySelectorAll('textarea.autocap-textarea, input.autocap-input, textarea.auto-number-box').forEach(el => {
+    if (el.dataset.hasCapListener) return;
+    el.dataset.hasCapListener = 'true';
+
+    el.addEventListener('input', function() {
+      const start = this.selectionStart;
+      const end = this.selectionEnd;
+      const oldVal = this.value;
+      const newVal = autoCapitalizeText(oldVal);
+      if (oldVal !== newVal) {
+        this.value = newVal;
+        this.setSelectionRange(start, end);
+      }
+    });
+  });
+}
+
 function attachAutoNumberListeners() {
   document.querySelectorAll('textarea.auto-number-box').forEach(textarea => {
     if (textarea.dataset.hasNumberListener) return;
@@ -1730,6 +1795,7 @@ function attachAutoNumberListeners() {
     textarea.addEventListener('input', function() {
       autoResizeTextarea(this);
       updateQuickCaptureCounts();
+      hasUnsavedChanges = true;
     });
 
     textarea.addEventListener('paste', function(e) {
@@ -1753,7 +1819,7 @@ function attachAutoNumberListeners() {
         const cleaned = line.replace(/^\d+[\.\)]\s*/, '').trim();
         if (!cleaned) return '';
         const lineNum = nextNum++;
-        return `${lineNum}. ${cleaned}`;
+        return `${lineNum}. ${autoCapitalizeText(cleaned)}`;
       }).filter(l => l !== '');
 
       const cursorPos = this.selectionStart;
@@ -1768,6 +1834,7 @@ function attachAutoNumberListeners() {
       
       autoResizeTextarea(this);
       updateQuickCaptureCounts();
+      hasUnsavedChanges = true;
       triggerAutoSave();
     });
 
@@ -1794,36 +1861,165 @@ function attachAutoNumberListeners() {
         this.setSelectionRange(newCursorPos, newCursorPos);
         
         autoResizeTextarea(this);
+        hasUnsavedChanges = true;
         this.dispatchEvent(new Event('input', { bubbles: true }));
       }
     });
   });
 }
 
+function onOddBox1Change() {
+  const box1 = document.getElementById('oddCategoryBox1');
+  const box2 = document.getElementById('oddCategoryBox2');
+  if (!box1 || !box2) return;
+
+  const val = box1.value;
+  box2.innerHTML = '<option value="" disabled selected>-- Select Subtype --</option>';
+
+  let options = [];
+  if (val === 'Operational') {
+    options = ['ODD Guideline', 'Requested'];
+  }
+
+  options.forEach(opt => {
+    const el = document.createElement('option');
+    el.value = opt;
+    el.textContent = opt;
+    box2.appendChild(el);
+  });
+}
+
+function insertOddCalloutTag() {
+  const box1 = document.getElementById('oddCategoryBox1').value;
+  const box2 = document.getElementById('oddCategoryBox2').value;
+  const textarea = document.getElementById('qcOddCallouts');
+  if (!box1 || !box2 || !textarea) return;
+
+  const tagText = `[${box1} - ${box2}] `;
+  const cursorPos = textarea.selectionStart;
+  const textBefore = textarea.value.substring(0, cursorPos);
+  const textAfter = textarea.value.substring(textarea.selectionEnd);
+
+  textarea.value = textBefore + tagText + textAfter;
+  const newPos = cursorPos + tagText.length;
+  textarea.setSelectionRange(newPos, newPos);
+  autoResizeTextarea(textarea);
+  updateQuickCaptureCounts();
+  hasUnsavedChanges = true;
+  triggerAutoSave();
+}
+
+function onDisengBox1Change() {
+  const box1 = document.getElementById('disengCategoryBox1');
+  const box2 = document.getElementById('disengCategoryBox2');
+  if (!box1 || !box2) return;
+
+  const val = box1.value;
+  box2.innerHTML = '<option value="" disabled selected>-- Select Subtype --</option>';
+
+  let options = [];
+  if (val === 'Operational') {
+    options = ['ODD Guideline', 'Requested'];
+  } else if (val === 'Other' || val === 'Stuck') {
+    options = ['1', '2', '3'];
+  }
+
+  options.forEach(opt => {
+    const el = document.createElement('option');
+    el.value = opt;
+    el.textContent = opt;
+    box2.appendChild(el);
+  });
+}
+
+function insertDisengagementTag() {
+  const box1 = document.getElementById('disengCategoryBox1').value;
+  const box2 = document.getElementById('disengCategoryBox2').value;
+  const textarea = document.getElementById('qcDisengagements');
+  if (!box1 || !box2 || !textarea) return;
+
+  const tagText = `[${box1} - ${box2}] `;
+  const cursorPos = textarea.selectionStart;
+  const textBefore = textarea.value.substring(0, cursorPos);
+  const textAfter = textarea.value.substring(textarea.selectionEnd);
+
+  textarea.value = textBefore + tagText + textAfter;
+  const newPos = cursorPos + tagText.length;
+  textarea.setSelectionRange(newPos, newPos);
+  autoResizeTextarea(textarea);
+  updateQuickCaptureCounts();
+  hasUnsavedChanges = true;
+  triggerAutoSave();
+}
+
+function insertDataColTag() {
+  const selectEl = document.getElementById('dataColHashtagSelect');
+  const textarea = document.getElementById('qcDataCol');
+  if (!selectEl || !textarea) return;
+
+  let val = selectEl.value;
+  if (!val) return;
+
+  if (val === 'ADD_CUSTOM') {
+    const customTag = prompt("Enter new custom hashtag (e.g., #radar_glitch):", "#");
+    if (customTag && customTag.trim() !== '') {
+      let formatted = customTag.trim();
+      if (!formatted.startsWith('#')) formatted = '#' + formatted;
+      
+      const newOpt = document.createElement('option');
+      newOpt.value = formatted;
+      newOpt.textContent = formatted;
+      selectEl.insertBefore(newOpt, selectEl.lastElementChild);
+      selectEl.value = formatted;
+      val = formatted;
+    } else {
+      selectEl.value = '';
+      return;
+    }
+  }
+
+  const tagText = `${val} `;
+  const cursorPos = textarea.selectionStart;
+  const textBefore = textarea.value.substring(0, cursorPos);
+  const textAfter = textarea.value.substring(textarea.selectionEnd);
+
+  textarea.value = textBefore + tagText + textAfter;
+  const newPos = cursorPos + tagText.length;
+  textarea.setSelectionRange(newPos, newPos);
+  autoResizeTextarea(textarea);
+  updateQuickCaptureCounts();
+  hasUnsavedChanges = true;
+  triggerAutoSave();
+  selectEl.value = '';
+}
+
 async function onTrainingTypeChangeRequest(selectEl) {
   const newType = selectEl.value;
   if (newType === previousTrainingType) return;
 
-  const confirmed = await showCustomConfirm("Would you like to start a new evaluation for this training type?\n\nYes to clear and start fresh, No to keep current form fields");
-  if (confirmed) {
-    currentEditingId = null;
-    clearAutoSaveDraft();
-    document.getElementById('saveBtn').textContent = 'Save Evaluation';
-    document.querySelectorAll('#pdfRoot input[type=text], #pdfRoot textarea').forEach(el => {
-      el.value = '';
-      autoResizeTextarea(el);
-    });
-    setDateToday();
-    swResetTimer();
-    savedSwTimes = [];
-    renderSavedStopwatches();
-    
-    previousTrainingType = newType;
-    onTrainingTypeChange();
-  } else {
-    previousTrainingType = newType;
-    onTrainingTypeChange();
+  if (hasUnsavedChanges) {
+    const confirmed = await showCustomConfirm("Would you like to start a new evaluation for this training type?\n\nYes to clear and start fresh, No to keep current form fields");
+    if (!confirmed) {
+      selectEl.value = previousTrainingType;
+      return;
+    }
   }
+
+  currentEditingId = null;
+  hasUnsavedChanges = false;
+  clearAutoSaveDraft();
+  document.getElementById('saveBtn').textContent = 'Save Evaluation';
+  document.querySelectorAll('#pdfRoot input[type=text], #pdfRoot textarea').forEach(el => {
+    el.value = '';
+    autoResizeTextarea(el);
+  });
+  setDateToday();
+  swResetTimer();
+  savedSwTimes = [];
+  renderSavedStopwatches();
+  
+  previousTrainingType = newType;
+  onTrainingTypeChange();
 }
 
 function onTrainingTypeChange() {
@@ -1846,6 +2042,7 @@ function confirmStartTraining() {
   
   clearAutoSaveDraft();
   currentEditingId = null;
+  hasUnsavedChanges = false;
   document.getElementById('saveBtn').textContent = 'Save Evaluation';
   document.querySelectorAll('#pdfRoot input[type=text], #pdfRoot textarea').forEach(el => {
     el.value = '';
@@ -1866,34 +2063,41 @@ function confirmStartTraining() {
 }
 
 async function attemptGoHome() {
-  if (document.getElementById('mainFormWrap').style.display !== 'none') {
+  if (hasUnsavedChanges) {
     const confirmed = await showCustomConfirm("Do you want to save your evaluation before leaving?");
     if (confirmed) {
       await saveDocumentInternal();
     }
   }
+  clearAutoSaveDraft();
   goHome();
 }
 
 async function attemptOpenHistory(moduleFilter) {
-  if (document.getElementById('mainFormWrap').style.display !== 'none') {
+  if (hasUnsavedChanges) {
     const confirmed = await showCustomConfirm("Do you want to save your evaluation before leaving?");
     if (confirmed) {
       await saveDocumentInternal();
     }
   }
+  clearAutoSaveDraft();
   openHistoryView(moduleFilter);
 }
 
 async function attemptCreateNew() {
-  const confirmed = await showCustomConfirm("Do you want to save your evaluation before starting a new one?");
-  if (confirmed) {
-    await saveDocumentInternal();
+  if (hasUnsavedChanges) {
+    const confirmed = await showCustomConfirm("Do you want to save your evaluation before starting a new one?");
+    if (confirmed) {
+      await saveDocumentInternal();
+    }
   }
+  clearAutoSaveDraft();
   createNewForm();
 }
 
 function goHome() {
+  clearAutoSaveDraft();
+  hasUnsavedChanges = false;
   document.getElementById('mainFormWrap').style.display = 'none';
   document.getElementById('historyView').style.display = 'none';
   document.getElementById('landingView').style.display = 'block';
@@ -1927,6 +2131,7 @@ function resetScores(){
     }
   }
   updateTotal();
+  hasUnsavedChanges = true;
   triggerAutoSave();
 }
 
@@ -1941,6 +2146,7 @@ async function clearPage() {
   if (!confirmed) return;
   
   currentEditingId = null;
+  hasUnsavedChanges = false;
   clearAutoSaveDraft();
   document.getElementById('saveBtn').textContent = 'Save Evaluation';
   
@@ -1988,7 +2194,7 @@ function triggerAutoSave() {
 
 function performAutoSave() {
   if (document.getElementById('mainFormWrap').style.display === 'none') return;
-  if (currentEditingId) return; // Do not overwrite drafts if we are actively viewing/editing an already saved record
+  if (currentEditingId && !hasUnsavedChanges) return;
 
   const categoryNotes = activeCategories.map((_, i) => {
     const el = document.getElementById(`catNotes-${i}`);
@@ -2014,7 +2220,10 @@ function performAutoSave() {
     improvementsDetailed: document.getElementById('improvementsDetailedField') ? document.getElementById('improvementsDetailedField').value : '',
     strengths: document.getElementById('strengthsField').value,
     improvements: document.getElementById('improvementsField').value,
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    swSeconds: swSeconds,
+    swRunning: swRunning,
+    swStartTime: swRunning ? swStartTime : null
   };
 
   safeSetStorage('zoox_eval_draft', JSON.stringify(draftData));
@@ -2060,6 +2269,15 @@ async function loadAutoSaveDraft() {
       savedSwTimes = [draft.savedSwTime];
     }
     renderSavedStopwatches();
+
+    if (draft.swRunning && draft.swStartTime) {
+      const elapsedSinceClose = Math.floor((Date.now() - draft.swStartTime) / 1000);
+      swSeconds = (draft.swSeconds || 0) + elapsedSinceClose;
+      swToggle(true);
+    } else if (draft.swSeconds) {
+      swSeconds = draft.swSeconds;
+      swDisplay.textContent = swFormat(swSeconds);
+    }
 
     if (Array.isArray(draft.scores)) {
       draft.scores.forEach((s, idx) => {
@@ -2124,7 +2342,8 @@ function checkLandingDraft() {
 function resumeDraftFromLanding() {
   const rawDraft = safeGetStorage('zoox_eval_draft');
   if (!rawDraft) return;
-  currentEditingId = null; // Fresh unsaved draft
+  currentEditingId = null;
+  hasUnsavedChanges = true;
   document.getElementById('saveBtn').textContent = 'Save Evaluation';
   document.getElementById('landingView').style.display = 'none';
   document.getElementById('historyView').style.display = 'none';
@@ -2138,6 +2357,7 @@ function clearAutoSaveDraft() {
 }
 
 let swSeconds = 0;
+let swStartTime = null;
 let swInterval = null;
 let swRunning = false;
 const swDisplay = document.getElementById('swDisplay');
@@ -2150,23 +2370,35 @@ function swFormat(totalSeconds){
   return `${h}:${m}:${s} Mins`;
 }
 
-function swToggle(){
-  if (swRunning){
+function swToggle(isResuming = false){
+  if (swRunning && !isResuming){
     clearInterval(swInterval);
     swRunning = false;
+    swStartTime = null;
     swStartBtn.textContent = 'Start';
     swStartBtn.classList.remove('stop');
     swStartBtn.classList.add('start');
   } else {
-    swInterval = setInterval(() => {
-      swSeconds++;
-      swDisplay.textContent = swFormat(swSeconds);
-    }, 1000);
+    if (!swRunning) {
+      swStartTime = Date.now() - (swSeconds * 1000);
+    }
     swRunning = true;
     swStartBtn.textContent = 'Pause';
     swStartBtn.classList.remove('start');
     swStartBtn.classList.add('stop');
+
+    if (swInterval) clearInterval(swInterval);
+    swInterval = setInterval(() => {
+      if (swStartTime) {
+        swSeconds = Math.floor((Date.now() - swStartTime) / 1000);
+      } else {
+        swSeconds++;
+      }
+      swDisplay.textContent = swFormat(swSeconds);
+    }, 1000);
   }
+  hasUnsavedChanges = true;
+  triggerAutoSave();
 }
 
 function updateSetupTitleDisplay() {
@@ -2187,12 +2419,15 @@ function swResetTimer(){
   if (swRunning) {
     clearInterval(swInterval);
     swRunning = false;
+    swStartTime = null;
     swStartBtn.textContent = 'Start';
     swStartBtn.classList.remove('stop');
     swStartBtn.classList.add('start');
   }
   swSeconds = 0;
   swDisplay.textContent = "00:00:00 Mins";
+  hasUnsavedChanges = true;
+  triggerAutoSave();
 }
 
 function swSave(){
@@ -2214,11 +2449,13 @@ function swSave(){
     savedSwTimes.push(timeToSave);
     renderSavedStopwatches();
     updateSetupTitleDisplay();
+    hasUnsavedChanges = true;
     triggerAutoSave();
     
     if (swRunning) {
       clearInterval(swInterval);
       swRunning = false;
+      swStartTime = null;
       swStartBtn.textContent = 'Start';
       swStartBtn.classList.remove('stop');
       swStartBtn.classList.add('start');
@@ -2230,6 +2467,7 @@ function swDeleteSavedTime(index){
   savedSwTimes.splice(index, 1);
   renderSavedStopwatches();
   updateSetupTitleDisplay();
+  hasUnsavedChanges = true;
   triggerAutoSave();
 }
 
@@ -2280,6 +2518,7 @@ function toggleCustomMission() {
     customMissionField.style.display = 'none';
     customMissionField.value = '';
   }
+  hasUnsavedChanges = true;
   triggerAutoSave();
 }
 
@@ -2629,22 +2868,40 @@ async function loadHistoryFromStorage(isBackgroundPoll = false){
       if (error) {
         if (!isBackgroundPoll) console.error('Error fetching history from Supabase:', error.message);
       } else {
-        const freshHistory = (data || []).map(row => ({
-          id: row.id,
-          trainingType: row.training_type,
-          traineeName: row.trainee_name,
-          missionVal: row.mission_val,
-          dateVal: row.date_val,
-          ticketVal: row.ticket_val,
-          routesVal: row.routes_val,
-          total: row.total_score,
-          timeLabel: row.time_label,
-          savedSwTimes: row.saved_sw_times || [],
-          scores: row.scores || [],
-          categoryNotes: row.category_notes || [],
-          strengths: row.strengths || '',
-          improvements: row.improvements || ''
-        }));
+        const freshHistory = (data || []).map(row => {
+          let parsedNotes = {};
+          try {
+            if (row.notes && typeof row.notes === 'string' && row.notes.startsWith('{')) {
+              parsedNotes = JSON.parse(row.notes);
+            } else if (row.notes && typeof row.notes === 'object') {
+              parsedNotes = row.notes;
+            }
+          } catch(e) {}
+
+          return {
+            id: row.id,
+            trainingType: row.training_type || 'SWO',
+            traineeName: row.trainee_name || '',
+            missionVal: row.mission_val || '',
+            customMissionVal: parsedNotes.customMissionVal || '',
+            dateVal: row.date_val || '',
+            ticketVal: row.ticket_val || '',
+            routesVal: row.routes_val || '',
+            total: row.total_score || '0',
+            timeLabel: row.time_label || '',
+            savedSwTimes: parsedNotes.savedSwTimes || [],
+            scores: parsedNotes.scores || [],
+            categoryNotes: parsedNotes.categoryNotes || [],
+            qcAddNotes: parsedNotes.qcAddNotes || '',
+            qcOddCallouts: parsedNotes.qcOddCallouts || '',
+            qcDisengagements: parsedNotes.qcDisengagements || '',
+            qcDataCol: parsedNotes.qcDataCol || '',
+            strengthsDetailed: parsedNotes.strengthsDetailed || '',
+            improvementsDetailed: parsedNotes.improvementsDetailed || '',
+            strengths: row.strengths || '',
+            improvements: row.improvements || ''
+          };
+        });
         
         savedHistory = freshHistory;
       }
@@ -2808,17 +3065,22 @@ function loadSnapshotIntoForm(snapshot) {
 
   const targetMission = snapshot.missionVal || snapshot.mission_val;
   if (targetMission && missionField) {
-    missionField.value = targetMission;
-    toggleCustomMission();
-    if (targetMission === 'Other' && snapshot.customMissionVal) {
-      customMissionField.value = snapshot.customMissionVal;
+    let optionExists = Array.from(missionField.options).some(opt => opt.value === targetMission);
+    if (!optionExists) {
+      missionField.value = 'Other';
+      toggleCustomMission();
+      if (customMissionField) customMissionField.value = targetMission;
+    } else {
+      missionField.value = targetMission;
+      toggleCustomMission();
+      if (targetMission === 'Other' && snapshot.customMissionVal) {
+        customMissionField.value = snapshot.customMissionVal;
+      }
     }
   }
 
   if (Array.isArray(snapshot.savedSwTimes)) {
     savedSwTimes = [...snapshot.savedSwTimes];
-  } else if (Array.isArray(snapshot.saved_sw_times)) {
-    savedSwTimes = [...snapshot.saved_sw_times];
   } else {
     savedSwTimes = [];
   }
@@ -2845,7 +3107,7 @@ function loadSnapshotIntoForm(snapshot) {
     updateTotal();
   }
 
-  const targetNotes = snapshot.categoryNotes || snapshot.category_notes;
+  const targetNotes = snapshot.categoryNotes;
   if (Array.isArray(targetNotes)) {
     targetNotes.forEach((note, idx) => {
       const el = document.getElementById(`catNotes-${idx}`);
@@ -2856,11 +3118,26 @@ function loadSnapshotIntoForm(snapshot) {
     });
   }
 
-  if (snapshot.strengthsDetailed && document.getElementById('strengthsDetailedField')) { document.getElementById('strengthsDetailedField').value = snapshot.strengthsDetailed; autoResizeTextarea(document.getElementById('strengthsDetailedField')); }
-  if (snapshot.improvementsDetailed && document.getElementById('improvementsDetailedField')) { document.getElementById('improvementsDetailedField').value = snapshot.improvementsDetailed; autoResizeTextarea(document.getElementById('improvementsDetailedField')); }
-  if (snapshot.strengths) { document.getElementById('strengthsField').value = snapshot.strengths; autoResizeTextarea(document.getElementById('strengthsField')); }
-  if (snapshot.improvements) { document.getElementById('improvementsField').value = snapshot.improvements; autoResizeTextarea(document.getElementById('improvementsField')); }
+  const qcAdd = snapshot.qcAddNotes || '';
+  const qcOdd = snapshot.qcOddCallouts || '';
+  const qcDis = snapshot.qcDisengagements || '';
+  const qcDat = snapshot.qcDataCol || '';
+  const sDet = snapshot.strengthsDetailed || '';
+  const iDet = snapshot.improvementsDetailed || '';
+  const str = snapshot.strengths || '';
+  const imp = snapshot.improvements || '';
+
+  if (document.getElementById('qcAddNotes')) { document.getElementById('qcAddNotes').value = qcAdd; autoResizeTextarea(document.getElementById('qcAddNotes')); }
+  if (document.getElementById('qcOddCallouts')) { document.getElementById('qcOddCallouts').value = qcOdd; autoResizeTextarea(document.getElementById('qcOddCallouts')); }
+  if (document.getElementById('qcDisengagements')) { document.getElementById('qcDisengagements').value = qcDis; autoResizeTextarea(document.getElementById('qcDisengagements')); }
+  if (document.getElementById('qcDataCol')) { document.getElementById('qcDataCol').value = qcDat; autoResizeTextarea(document.getElementById('qcDataCol')); }
+  if (document.getElementById('strengthsDetailedField')) { document.getElementById('strengthsDetailedField').value = sDet; autoResizeTextarea(document.getElementById('strengthsDetailedField')); }
+  if (document.getElementById('improvementsDetailedField')) { document.getElementById('improvementsDetailedField').value = iDet; autoResizeTextarea(document.getElementById('improvementsDetailedField')); }
+  if (document.getElementById('strengthsField')) { document.getElementById('strengthsField').value = str; autoResizeTextarea(document.getElementById('strengthsField')); }
+  if (document.getElementById('improvementsField')) { document.getElementById('improvementsField').value = imp; autoResizeTextarea(document.getElementById('improvementsField')); }
   updateQuickCaptureCounts();
+
+  hasUnsavedChanges = false;
 }
 
 function editHistoryItem(id) {
@@ -2882,6 +3159,7 @@ function editHistoryItem(id) {
 async function saveDocumentInternal() {
   const traineeName = (document.getElementById('traineeNameField') ? document.getElementById('traineeNameField').value : '').trim() || 'Unnamed Trainee';
   const missionVal = typeof getMissionValue === 'function' ? getMissionValue() : 'No mission selected';
+  const customMissionVal = (missionField && missionField.value === 'Other') ? (customMissionField ? customMissionField.value : '') : '';
   const dateVal = (document.getElementById('dateField') ? document.getElementById('dateField').value : '') || 'no date';
   const ticketVal = document.getElementById('ticketField') ? document.getElementById('ticketField').value : '';
   const routesVal = document.getElementById('routesField') ? document.getElementById('routesField').value : '';
@@ -2897,30 +3175,39 @@ async function saveDocumentInternal() {
     return el ? (el.value || '') : '';
   });
 
-  const strengthsDetailedVal = document.getElementById('strengthsDetailedField') ? document.getElementById('strengthsDetailedField').value : '';
-  const improvementsDetailedVal = document.getElementById('improvementsDetailedField') ? document.getElementById('improvementsDetailedField').value : '';
   const qcAddNotesVal = document.getElementById('qcAddNotes') ? document.getElementById('qcAddNotes').value : '';
   const qcOddCalloutsVal = document.getElementById('qcOddCallouts') ? document.getElementById('qcOddCallouts').value : '';
   const qcDisengagementsVal = document.getElementById('qcDisengagements') ? document.getElementById('qcDisengagements').value : '';
   const qcDataColVal = document.getElementById('qcDataCol') ? document.getElementById('qcDataCol').value : '';
+  const strengthsDetailedVal = document.getElementById('strengthsDetailedField') ? document.getElementById('strengthsDetailedField').value : '';
+  const improvementsDetailedVal = document.getElementById('improvementsDetailedField') ? document.getElementById('improvementsDetailedField').value : '';
   const strengthsVal = document.getElementById('strengthsField') ? document.getElementById('strengthsField').value : '';
   const improvementsVal = document.getElementById('improvementsField') ? document.getElementById('improvementsField').value : '';
 
+  const scoresArray = Array.isArray(scores) ? scores.map(s => (s === null || s === undefined ? (useStandardText ? 'Not Selected' : 0) : s)) : [];
+
+  const extraPayloadObject = {
+    savedSwTimes: [...savedSwTimes],
+    scores: scoresArray,
+    categoryNotes: categoryNotes,
+    qcAddNotes: qcAddNotesVal,
+    qcOddCallouts: qcOddCalloutsVal,
+    qcDisengagements: qcDisengagementsVal,
+    qcDataCol: qcDataColVal,
+    strengthsDetailed: strengthsDetailedVal,
+    improvementsDetailed: improvementsDetailedVal,
+    customMissionVal: customMissionVal
+  };
+
   const combinedStrengths = [
-    strengthsDetailedVal ? `--- Detailed Strengths ---\n${strengthsDetailedVal}` : '',
-    qcAddNotesVal ? `--- Additional Notes ---\n${qcAddNotesVal}` : '',
-    qcOddCalloutsVal ? `--- ODD Callouts ---\n${qcOddCalloutsVal}` : '',
-    qcDataColVal ? `--- Data Collection ---\n${qcDataColVal}` : '',
-    strengthsVal ? `--- General Strengths ---\n${strengthsVal}` : ''
+    strengthsDetailedVal ? `Detailed Strengths:\n${strengthsDetailedVal}` : '',
+    strengthsVal ? `General Strengths:\n${strengthsVal}` : ''
   ].filter(Boolean).join('\n\n');
 
   const combinedImprovements = [
-    improvementsDetailedVal ? `--- Detailed Improvements ---\n${improvementsDetailedVal}` : '',
-    qcDisengagementsVal ? `--- Disengagements ---\n${qcDisengagementsVal}` : '',
-    improvementsVal ? `--- General Improvements ---\n${improvementsVal}` : ''
+    improvementsDetailedVal ? `Detailed Improvements:\n${improvementsDetailedVal}` : '',
+    improvementsVal ? `General Improvements:\n${improvementsVal}` : ''
   ].filter(Boolean).join('\n\n');
-
-  const scoresArray = Array.isArray(scores) ? scores.map(s => (s === null || s === undefined ? (useStandardText ? 'Not Selected' : 0) : s)) : [];
 
   if (currentStorageMode === 'cloud') {
     const payload = {
@@ -2932,11 +3219,9 @@ async function saveDocumentInternal() {
       routes_val: String(routesVal || ''),
       total_score: String(total),
       time_label: String(timeLabel),
-      saved_sw_times: [...savedSwTimes],
-      scores: scoresArray,
-      category_notes: categoryNotes,
-      strengths: combinedStrengths,
-      improvements: combinedImprovements
+      notes: extraPayloadObject,
+      strengths: String(combinedStrengths),
+      improvements: String(combinedImprovements)
     };
 
     if (currentEditingId) {
@@ -2957,6 +3242,7 @@ async function saveDocumentInternal() {
       trainee_name: String(traineeName),
       traineeName: String(traineeName),
       missionVal: String(missionVal || 'No mission selected'),
+      customMissionVal: String(customMissionVal),
       dateVal: String(dateVal),
       ticketVal: String(ticketVal || ''),
       routesVal: String(routesVal || ''),
@@ -2966,8 +3252,14 @@ async function saveDocumentInternal() {
       savedSwTimes: [...savedSwTimes],
       scores: scoresArray,
       categoryNotes: categoryNotes,
-      strengths: combinedStrengths,
-      improvements: combinedImprovements,
+      qcAddNotes: String(qcAddNotesVal),
+      qcOddCallouts: String(qcOddCalloutsVal),
+      qcDisengagements: String(qcDisengagementsVal),
+      qcDataCol: String(qcDataColVal),
+      strengthsDetailed: String(strengthsDetailedVal),
+      improvementsDetailed: String(improvementsDetailedVal),
+      strengths: String(strengthsVal),
+      improvements: String(improvementsVal),
       timestamp: Date.now()
     };
 
@@ -2987,6 +3279,7 @@ async function saveDocumentInternal() {
 
   await loadHistoryFromStorage();
   clearAutoSaveDraft();
+  hasUnsavedChanges = false;
   
   const saveBtn = document.getElementById('saveBtn');
   if (saveBtn) saveBtn.textContent = 'Update Evaluation';
@@ -3019,6 +3312,7 @@ async function saveDocument(){
 
 function createNewForm(){
   currentEditingId = null;
+  hasUnsavedChanges = false;
   clearAutoSaveDraft();
   document.getElementById('saveBtn').textContent = 'Save Evaluation';
   
@@ -3071,12 +3365,14 @@ async function handleDeleteAccount() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  clearAutoSaveDraft();
   setDateToday();
   populateMissionDropdown();
   updateStorageUIIndicators();
   loadHistoryFromStorage();
   setupAutoRefreshTicker();
   attachAutoNumberListeners();
+  attachAutoCapitalizeListeners();
   updateQuickCaptureCounts();
   checkLandingDraft();
 
@@ -3086,10 +3382,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target.tagName === 'TEXTAREA') {
         autoResizeTextarea(e.target);
       }
+      hasUnsavedChanges = true;
       triggerAutoSave();
       updateQuickCaptureCounts();
     });
     mainForm.addEventListener('change', () => {
+      hasUnsavedChanges = true;
       triggerAutoSave();
       updateQuickCaptureCounts();
     });
